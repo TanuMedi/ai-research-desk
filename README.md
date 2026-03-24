@@ -53,22 +53,33 @@ pip install -r requirements.txt
 
 **2. Set your API key**
 
+Create a `.env` file in the project root (this file is gitignored):
+
 For Claude (default):
 ```bash
-export ANTHROPIC_API_KEY=your_key_here
+echo "ANTHROPIC_API_KEY=your_key_here" > .env
 ```
 
-For OpenAI:
+For OpenAI (also set `LLM_PROVIDER = "openai"` in `config.py`):
 ```bash
-export LLM_PROVIDER=openai
-export OPENAI_API_KEY=your_key_here
+echo "OPENAI_API_KEY=your_key_here" > .env
 ```
 
 **3. Run**
 
 ```bash
-python main.py
+source .env && python main.py
 ```
+
+**4. (Optional) Create a shortcut**
+
+Add this alias to your `~/.zshrc` so you can run `research-desk` from anywhere:
+
+```bash
+alias research-desk="cd /path/to/ai-research-desk && source .env && python main.py"
+```
+
+Then reload your shell: `source ~/.zshrc`
 
 You'll be prompted to confirm before each run, and again to approve the top 2 ideas for demo exploration.
 
