@@ -23,9 +23,9 @@ env/
 .env.*
 
 # Generated outputs
-outputs/*.md
 outputs/*.json
 !outputs/.gitkeep
+!outputs/latest_newsletter.md
 
 # Storage (DB + logs)
 storage/memory.db

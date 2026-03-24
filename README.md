@@ -1,19 +1,23 @@
 # AI Research Desk (MVP)
 
-A weekly arXiv `cs.AI` digest and demo proposal generator powered by a multi-agent pipeline.
+AI engineering teams at financial firms need to stay current on research but don't have time to read 30+ papers a week. This pipeline automates the scouting, filtering, and proposal generation — surfacing the most relevant cs.AI papers and turning them into actionable demo proposals scoped for FinServ teams.
 
-Every run fetches the latest AI research papers, filters for agentic/reasoning topics, ranks them by novelty, selects the top candidates, and produces a newsletter with demo proposals — all in one command.
+See a real output: [outputs/latest_newsletter.md](outputs/latest_newsletter.md)
 
 ## How it works
 
-```
-Research Agent → Analysis Agent → PM Agent → Newsletter + Memory
+```mermaid
+graph LR
+    A[arXiv cs.AI] --> B[Research Agent]
+    B -->|keyword filter + LLM summarize| C[Analysis Agent]
+    C -->|novelty scoring via Jaccard| D[PM Agent]
+    D -->|top 2 picks + proposals| E[Newsletter + SQLite Memory]
 ```
 
-1. **Research Agent** — queries arXiv for `cs.AI` papers from the past 7 days, filters by agent-related keywords, and summarizes each paper via LLM.
-2. **Analysis Agent** — scores and ranks the summarized ideas by novelty (Jaccard similarity against past ideas stored in SQLite).
-3. **PM Agent** — selects the top 2 ideas and generates structured demo proposals.
-4. **Output** — saves a Markdown newsletter to `outputs/latest_newsletter.md` and persists ideas to the local SQLite memory.
+1. **Research Agent** — fetches cs.AI papers from the past 7 days, pre-filters by agent/FinServ keywords (saving LLM calls), and summarizes relevant papers via LLM.
+2. **Analysis Agent** — scores and ranks ideas by novelty using Jaccard similarity against past ideas stored in SQLite. Papers with no extractable key idea are dropped.
+3. **PM Agent** — selects the top 2 ideas and generates demo proposals framed for a FinServ AI engineering team.
+4. **Output** — saves a dated Markdown newsletter, a run report (JSON), and persists ideas to SQLite for future deduplication.
 
 ## Project structure
 
@@ -99,7 +103,17 @@ All settings live in [config.py](config.py):
 
 ## Output
 
-Each run saves to `outputs/`:
-- `latest_newsletter.md` — the full weekly digest with summaries and proposals
+Each run produces:
+- `outputs/latest_newsletter.md` — the full weekly digest with summaries and proposals
+- `storage/logs/run_report_<timestamp>.json` — pipeline stats (papers fetched, filtered, novel vs incremental, etc.)
+- `storage/logs/week_<label>.json` — full data snapshot for the week
 
-Approved ideas are flagged in the SQLite database at `storage/memory.db` for deduplication in future runs.
+Approved ideas are flagged in `storage/memory.db` for deduplication in future runs.
+
+## Design Decisions
+
+- **Pre-filter before LLM calls** — keyword matching against title + abstract before summarization avoids wasting LLM calls on irrelevant papers
+- **Jaccard novelty scoring** — simple, interpretable, and doesn't require embeddings or an external service. Domain stopwords prevent false matches on high-frequency FinServ terms
+- **Structured run reports** — every run saves a JSON report with pipeline stats, enabling monitoring and trend analysis over time
+- **No key idea = skip** — papers where the LLM can't extract a key idea are dropped from analysis rather than being falsely labeled as novel
+- **Prompts carry the domain context** — FinServ scoping lives entirely in config keywords and prompt templates, keeping agents and tools domain-agnostic and reusable
