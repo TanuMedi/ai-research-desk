@@ -1,7 +1,7 @@
-SUMMARIZE_PAPER_PROMPT = """You are an AI research analyst at a financial services firm. Analyze the following research paper and return a JSON object.
+SUMMARIZE_PAPER_PROMPT = """You are an AI research analyst at a financial services firm. Analyze the following github repo or research paper and return a JSON object.
 
-Paper Title: {title}
-Abstract: {abstract}
+Title: {title}
+Overview: {abstract}
 
 Return ONLY valid JSON (no markdown, no explanation) with this exact structure:
 {{
@@ -11,11 +11,11 @@ Return ONLY valid JSON (no markdown, no explanation) with this exact structure:
   "tags": ["tag1", "tag2", "tag3"]
 }}
 
-Set agent_relevance to true if the paper's techniques could be applied to financial services: trading systems, risk management, compliance automation, fraud detection, customer service, document processing, regulatory reporting, or operational workflows in banking/capital markets.
+Set agent_relevance to true if the mentioned techniques could be applied to financial services: trading systems, risk management, compliance automation, fraud detection, customer service, document processing, regulatory reporting, or operational workflows in banking/capital markets.
 Tags should be 2-5 short keywords covering both the AI technique and potential financial application (e.g. "multi-agent trading", "LLM compliance", "fraud-detection", "document-extraction").
 """
 
-GENERATE_PROPOSAL_PROMPT = """You are a technical product manager on an AI engineering team at a financial services firm (think JP Morgan, Bloomberg, UBS). Based on the following idea extracted from a research paper, write a demo proposal.
+GENERATE_PROPOSAL_PROMPT = """You are a technical product manager on an AI engineering team at a financial services firm (think JP Morgan, Bloomberg, UBS). Based on the following idea extracted, write a demo proposal.
 
 Idea Title: {idea_title}
 Key Idea: {key_idea}
@@ -49,18 +49,24 @@ Current state:
 Available tools:
 {tool_schemas}
 
+Available skills (internal processing, not tools):
+- score_ideas: Score and rank ideas using multi-factor scoring (novelty, leverage, relevance, feasibility). Use after ideas are gathered. Produces: scored_ideas, selected_ideas.
+- generate_proposals: Generate demo proposals for selected ideas via LLM. Use after scoring. Produces: proposals.
+
 Past ideas from memory (for novelty comparison):
 {memory_context}
 
 Generate an ordered plan of actions to achieve the goal from the current state.
 
 Guidelines:
+- Search for general AI ideas first — do not filter by domain during data gathering
+- Domain relevance (e.g. financial services) is assessed separately during scoring
 - Search GitHub first for real implementations and applied techniques
 - Only search arXiv as a follow-up if GitHub yields fewer than 3 ideas or quality signals show low novelty
 - Avoid redundant tool calls — do not re-search a source that already produced results in state
 - Include scoring after ideas are gathered, then proposal generation
 - Do NOT include "critic" or "STOP" as plan steps — those are handled automatically
-- Each step must use a valid tool or skill name
+- Each step must use a valid action name from the available tools or skills listed above
 
 Return ONLY valid JSON (no markdown, no backticks):
 {{

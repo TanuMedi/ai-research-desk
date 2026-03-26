@@ -16,9 +16,9 @@ from utils.llm_client import LLMClient
 console = Console()
 
 DEFAULT_GOAL = (
-    "Find 3-5 high-quality applied AI ideas relevant to financial services "
-    "(trading, compliance, fraud detection, document processing) by searching "
-    "GitHub repos and arXiv papers. "
+    "Find 3-5 high-quality applied AI ideas from GitHub repos and arXiv papers."
+    "Once you have identified potential ideas, assess them to see if they can be applied to financial services "
+    "(trading, compliance, fraud detection, document processing)."
     "Ideas should be feasible, novel, and have clear business impact. "
     "Score and rank them, then generate demo proposals for the top 2."
 )
