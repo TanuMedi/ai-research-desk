@@ -1,10 +1,42 @@
 import json
 import sqlite3
 from datetime import datetime, timezone
+from typing import Any
 
 import config
 from models.idea import Idea
 from utils.helpers import current_week_label
+
+# ---------------------------------------------------------------------------
+# MCP-style schema
+# ---------------------------------------------------------------------------
+TOOL_SCHEMA = {
+    "name": "memory",
+    "description": "Load past ideas from the SQLite memory DB for novelty comparison, or persist new ideas.",
+    "input_schema": {
+        "action": {
+            "type": "string",
+            "enum": ["load", "store"],
+            "description": "'load' to fetch past ideas, 'store' to persist current ideas.",
+        },
+    },
+    "use_when": "You need to check idea novelty against past runs or save this week's ideas.",
+    "produces": ["past_ideas"],
+}
+
+
+async def run(tool_input: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
+    """MCP-style entry point."""
+    action = tool_input.get("action", "load")
+    if action == "store":
+        ideas = state.get("ideas", [])
+        if ideas:
+            store_weekly_ideas(ideas)
+        return {"stored_count": len(ideas)}
+    else:
+        weeks_limit = tool_input.get("weeks_limit", config.MEMORY_WEEKS_LIMIT)
+        past = get_past_ideas(weeks_limit=weeks_limit)
+        return {"past_ideas": past}
 
 
 def init_db() -> None:
@@ -27,12 +59,20 @@ def init_db() -> None:
         conn.commit()
 
 
-def get_past_ideas() -> list[dict]:
-    """Fetch all previously stored ideas."""
+def get_past_ideas(weeks_limit: int | None = None) -> list[dict]:
+    """Fetch previously stored ideas, optionally capped to the most recent N weeks."""
     with _connect() as conn:
-        rows = conn.execute(
-            "SELECT paper_title, paper_link, key_idea, tags, novelty_label, demo_approved, demo_created FROM ideas"
-        ).fetchall()
+        if weeks_limit and weeks_limit > 0:
+            cutoff = _week_label_n_weeks_ago(weeks_limit)
+            rows = conn.execute(
+                "SELECT paper_title, paper_link, key_idea, tags, novelty_label, demo_approved, demo_created "
+                "FROM ideas WHERE week >= ? ORDER BY created_at DESC",
+                (cutoff,),
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                "SELECT paper_title, paper_link, key_idea, tags, novelty_label, demo_approved, demo_created FROM ideas"
+            ).fetchall()
     return [
         {
             "paper_title": r[0],
@@ -128,6 +168,13 @@ def _word_set(text: str) -> set[str]:
         "method", "based", "using", "learning", "network",
     }
     return {w for w in words if w not in stopwords and len(w) > 2}
+
+
+def _week_label_n_weeks_ago(n: int) -> str:
+    """Return the week label for N weeks ago, for SQL filtering."""
+    from datetime import timedelta
+    target = datetime.now(timezone.utc) - timedelta(weeks=n)
+    return f"{target.year}-{target.strftime('%b')}-W{target.isocalendar().week:02d}"
 
 
 def _connect() -> sqlite3.Connection:

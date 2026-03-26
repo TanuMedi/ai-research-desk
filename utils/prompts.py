@@ -32,3 +32,101 @@ Return ONLY valid JSON (no markdown, no explanation) with this exact structure:
   "data_requirements": "1-2 sentences on what data, APIs, or datasets are needed, noting any compliance or data-privacy considerations relevant to financial services"
 }}
 """
+
+# ---------------------------------------------------------------------------
+# V2 — Planner Prompt
+# ---------------------------------------------------------------------------
+
+PLANNER_PROMPT = """
+You are an AI research agent planner.
+
+Your goal is:
+{goal}
+
+Current state:
+{state_summary}
+
+Available tools:
+{tool_schemas}
+
+Past ideas from memory (for novelty comparison):
+{memory_context}
+
+Generate an ordered plan of actions to achieve the goal from the current state.
+
+Guidelines:
+- Search GitHub first for real implementations and applied techniques
+- Only search arXiv as a follow-up if GitHub yields fewer than 3 ideas or quality signals show low novelty
+- Avoid redundant tool calls — do not re-search a source that already produced results in state
+- Include scoring after ideas are gathered, then proposal generation
+- Do NOT include "critic" or "STOP" as plan steps — those are handled automatically
+- Each step must use a valid tool or skill name
+
+Return ONLY valid JSON (no markdown, no backticks):
+{{
+  "steps": [
+    {{"action": "tool_or_skill_name", "input": {{}}, "reasoning": "why this step"}}
+  ]
+}}
+"""
+
+# ---------------------------------------------------------------------------
+# V2 — Critic Prompt
+# ---------------------------------------------------------------------------
+
+CRITIC_PROMPT = """You are a senior AI strategist reviewing demo proposals for a financial services firm.
+
+PROPOSALS:
+{proposals_json}
+
+SCORES:
+{scores_json}
+
+Evaluate each proposal on:
+1. Specificity — is the demo scope concrete and actionable?
+2. Feasibility — can an engineering team prototype this in 2-4 weeks?
+3. Differentiation — does it offer something genuinely new vs existing tools?
+
+Return ONLY valid JSON (no markdown, no explanation):
+{{
+  "needs_improvement": true or false,
+  "issues": ["list of specific issues found"],
+  "suggestions": ["list of actionable improvement suggestions"]
+}}
+
+Set needs_improvement to true only if there are real problems. Be constructive, not perfectionistic.
+"""
+
+# ---------------------------------------------------------------------------
+# V2 — Evaluation Prompts
+# ---------------------------------------------------------------------------
+
+EVALUATE_IDEA_PROMPT = """Rate the following AI idea for financial services application.
+
+Idea: {key_idea}
+Methods: {methods}
+Tags: {tags}
+
+Return ONLY valid JSON (no markdown, no explanation):
+{{
+  "actionability": <1-5>,
+  "novelty": <1-5>,
+  "usefulness": <1-5>
+}}
+"""
+
+EVALUATE_PROPOSAL_PROMPT = """Rate the following demo proposal for a FinServ AI team.
+
+Title: {idea_title}
+Why it matters: {why_it_matters}
+Demo scope: {demo_scope}
+Data requirements: {data_requirements}
+
+Return ONLY valid JSON (no markdown, no explanation):
+{{
+  "clarity": <1-5>,
+  "feasibility": <1-5>,
+  "completeness": <1-5>
+}}
+"""
+

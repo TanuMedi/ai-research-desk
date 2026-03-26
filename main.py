@@ -3,36 +3,68 @@ import sys
 
 from rich.console import Console
 from rich.panel import Panel
-from rich.prompt import Confirm
 from rich.markdown import Markdown
 from rich.table import Table
 
-import agents.analysis_agent as analysis_agent
-import agents.pm_agent as pm_agent
-import agents.research_agent as research_agent
-from models.report import RunReport
-from tools.memory_tool import init_db, mark_demo_approved, store_weekly_ideas
+from agents.agent_loop import run_agent
+from evaluation.evaluator import evaluate_run
+from tools.memory_tool import init_db
+from tools.registry import build_default_registry
 from utils.helpers import generate_newsletter, save_outputs
 from utils.llm_client import LLMClient
 
 console = Console()
 
+DEFAULT_GOAL = (
+    "Find 3-5 high-quality applied AI ideas relevant to financial services "
+    "(trading, compliance, fraud detection, document processing) by searching "
+    "GitHub repos and arXiv papers. "
+    "Ideas should be feasible, novel, and have clear business impact. "
+    "Score and rank them, then generate demo proposals for the top 2."
+)
 
-def print_report(report: RunReport) -> None:
-    table = Table(title="Run Report", border_style="cyan", show_lines=True)
+
+def print_scores_table(scored_ideas: list) -> None:
+    table = Table(title="Scored Ideas", border_style="cyan", show_lines=True)
+    table.add_column("Rank", style="bold", width=4)
+    table.add_column("Title", max_width=40)
+    table.add_column("Final", justify="right")
+    table.add_column("Novelty", justify="right")
+    table.add_column("Leverage", justify="right")
+    table.add_column("Relevance", justify="right")
+    table.add_column("Feasibility", justify="right")
+
+    for i, idea in enumerate(scored_ideas[:8], 1):
+        table.add_row(
+            str(i),
+            getattr(idea, "paper_title", "")[:40],
+            f"{getattr(idea, 'final_score', 0):.2f}",
+            f"{getattr(idea, 'novelty_score', 0):.2f}",
+            f"{getattr(idea, 'leverage_score', 0):.2f}",
+            f"{getattr(idea, 'relevance_score', 0):.2f}",
+            f"{getattr(idea, 'feasibility_score', 0):.2f}",
+        )
+
+    console.print()
+    console.print(table)
+
+
+def print_eval_table(evaluation: dict) -> None:
+    table = Table(title="Evaluation Results", border_style="magenta", show_lines=True)
     table.add_column("Metric", style="bold")
     table.add_column("Value", justify="right")
 
-    table.add_row("Papers fetched", str(report.papers_fetched))
-    table.add_row("Keyword matches", str(report.papers_keyword_matched))
-    table.add_row("Summarized", str(report.papers_summarized))
-    table.add_row("Failed summarization", str(report.papers_failed_summarization))
-    table.add_row("Past ideas in memory", str(report.past_ideas_in_memory))
-    table.add_row("Skipped (no key idea)", str(report.ideas_skipped_no_key_idea))
-    table.add_row("Novel", str(report.ideas_novel))
-    table.add_row("Incremental", str(report.ideas_incremental))
-    table.add_row("Proposals generated", str(report.proposals_generated))
-    table.add_row("Proposals approved", str(report.proposals_approved))
+    idea_q = evaluation.get("idea_quality", {})
+    table.add_row("Idea quality (avg)", str(idea_q.get("average", "N/A")))
+
+    proposal_q = evaluation.get("proposal_quality", {})
+    table.add_row("Proposal quality (avg)", str(proposal_q.get("average", "N/A")))
+
+    eff = evaluation.get("tool_efficiency", {})
+    table.add_row("Tool calls (total)", str(eff.get("total_calls", 0)))
+    table.add_row("Tool calls (successful)", str(eff.get("successful_calls", 0)))
+    table.add_row("Tool calls (redundant)", str(eff.get("redundant_calls", 0)))
+    table.add_row("Efficiency ratio", str(eff.get("efficiency_ratio", 0)))
 
     console.print()
     console.print(table)
@@ -40,68 +72,60 @@ def print_report(report: RunReport) -> None:
 
 async def main() -> None:
     console.print(Panel.fit(
-        "[bold magenta]AI Research Desk[/bold magenta]\n"
-        "Weekly arXiv cs.AI digest for FinServ + demo proposal generator",
+        "[bold magenta]AI Research Desk v2[/bold magenta]\n"
+        "Agentic AI research system with MCP-style tools",
         border_style="magenta",
     ))
 
-    if not Confirm.ask("\n[bold]Run this week's AI research cycle?[/bold]", default=True):
-        console.print("Exiting. See you next week!")
-        sys.exit(0)
-
-    console.print()
-
-    # Initialise DB, LLM, and report
+    # --- Initialize ---
     init_db()
-    report = RunReport()
     try:
         llm = LLMClient()
     except ValueError as e:
         console.print(f"[red]✗ LLM configuration error: {e}[/red]")
         sys.exit(1)
 
-    # --- Research Agent ---
-    try:
-        ideas = await research_agent.run(llm, report)
-    except Exception as e:
-        console.print(f"[red]✗ Failed to fetch/summarize papers: {e}[/red]")
-        sys.exit(1)
+    registry = build_default_registry()
+    console.print(f"[green]✓ Registered {len(registry.list_tools())} tools[/green]")
+
+    # --- Run Agent Loop ---
+    console.print(Panel.fit(
+        "[bold cyan]Starting agent loop...[/bold cyan]",
+        border_style="cyan",
+    ))
+
+    state = await run_agent(DEFAULT_GOAL, llm, registry)
+
+    # --- Results ---
+    ideas = state.get("ideas", [])
+    scored = state.get("scored_ideas", [])
+    selected = state.get("selected_ideas", [])
+    proposals = state.get("proposals", [])
 
     if not ideas:
-        console.print("[red]✗ No ideas to process. Exiting.[/red]")
-        print_report(report)
-        report.save()
+        console.print("[red]✗ No ideas found. Try adjusting the goal or sources.[/red]")
         sys.exit(1)
 
-    # --- Analysis Agent ---
-    ranked = await analysis_agent.run(ideas, report)
+    # Display scores
+    if scored:
+        print_scores_table(scored)
 
-    # --- PM Agent ---
-    top2, proposals = await pm_agent.run(ranked, llm, report)
+    # Generate & display newsletter
+    if selected and proposals:
+        console.print("\n[bold cyan]→ Generating newsletter...[/bold cyan]")
+        newsletter = generate_newsletter(scored or ideas, selected, proposals)
+        save_outputs(newsletter, scored or ideas, selected, proposals)
+        console.print("  Saved to [bold]outputs/latest_newsletter.md[/bold]")
+        console.print()
+        console.print(Panel(Markdown(newsletter), title="Weekly Newsletter", border_style="green"))
 
-    # --- Persist to DB ---
-    store_weekly_ideas(ranked)
+    # --- Evaluation ---
+    console.print("\n[bold cyan]→ Running evaluation...[/bold cyan]")
+    evaluation = await evaluate_run(state, llm)
+    state["evaluation"] = evaluation
+    print_eval_table(evaluation)
 
-    # --- Generate & Save Newsletter ---
-    console.print("[bold cyan]→ Generating newsletter...[/bold cyan]")
-    newsletter = generate_newsletter(ranked, top2, proposals)
-    save_outputs(newsletter, ranked, top2, proposals)
-    console.print("  Saved to [bold]outputs/latest_newsletter.md[/bold]")
-
-    # --- Display Newsletter ---
-    console.print()
-    console.print(Panel(Markdown(newsletter), title="Weekly Newsletter", border_style="green"))
-
-    # --- Approval Step ---
-    console.print()
-    if Confirm.ask("[bold]Approve these 2 ideas for demo exploration?[/bold]", default=False):
-        mark_demo_approved([i.paper_title for i in top2])
-        report.proposals_approved = len(top2)
-
-    # --- Run Report ---
-    print_report(report)
-    report_path = report.save()
-    console.print(f"  Report saved to [bold]{report_path}[/bold]")
+    console.print("\n[bold green]✓ Run complete![/bold green]")
 
 
 if __name__ == "__main__":
