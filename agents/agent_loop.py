@@ -55,7 +55,7 @@ async def run_agent(
     state = create_initial_state(goal)
     state["_llm"] = llm
 
-    await _load_past_ideas(registry, state)
+    # await _load_past_ideas(registry, state)
 
     agent_start = time.perf_counter()
 
@@ -63,13 +63,11 @@ async def run_agent(
         console.print(f"\n[bold magenta]━━━ Cycle {cycle}/{config.MAX_CYCLES} ━━━[/bold magenta]")
         cycle_timing = await _run_cycle(cycle, goal, state, registry, llm)
         state["timing"]["cycles"].append(cycle_timing)
-
         _print_cycle_timing(cycle, cycle_timing)
 
         if state["plan"]["status"] != NEEDS_REPLAN:
             break
-
-    await call_tool(registry, "memory", {"action": "store"}, state)
+    # await call_tool(registry, "memory", {"action": "store"}, state)
 
     total_time_ms = int((time.perf_counter() - agent_start) * 1000)
     console.print(f"\n[bold green]✓ Agent finished in {total_time_ms}ms[/bold green]")
@@ -147,26 +145,49 @@ async def _phase_plan(
         )
         for s in plan["steps"]
     ]
+    print(f"--------> Generated plan steps: \n{steps} <------")
 
     state["plan"] = {"steps": steps, "current_index": 0, "status": EXECUTING}
     console.print(f"  [cyan]Plan: {len(steps)} steps[/cyan] [dim]({ms}ms)[/dim]")
     return ms, True
 
 
+SKILL_ACTIONS = {"score_ideas", "generate_proposals"}
+
+
 async def _phase_execute(
     state: dict[str, Any],
     registry: ToolRegistry,
 ) -> tuple[int, str]:
-    """Execute all plan steps. Returns (duration_ms, status).
+    """Execute plan steps. Returns (duration_ms, status).
 
-    Status is FAILED if any step fails (partial or full), OK otherwise.
-    Individual step failures are logged in timing.steps for debugging.
+    Executes tool steps (data gathering) first. When a skill step is
+    reached after at least one tool has run, execution pauses and returns
+    NEEDS_REPLAN so the planner can re-evaluate with updated state —
+    e.g. skip arXiv if GitHub already produced enough ideas.
+
+    Status is FAILED if any step fails, NEEDS_REPLAN if paused at a
+    skill boundary, OK if all steps completed.
     """
     start = time.perf_counter()
     steps: list[PlanStep] = state["plan"]["steps"]
     failures = 0
+    tools_executed = 0
 
     for i, plan_step in enumerate(steps):
+        # Pause before skills if we've gathered data — replan to reassess
+        if plan_step.action in SKILL_ACTIONS and tools_executed > 0:
+            remaining = len(steps) - i
+            console.print(
+                f"\n  [dim]Pausing before skills ({remaining} steps remaining) "
+                f"— replanning with updated state[/dim]"
+            )
+            # Mark remaining steps as skipped
+            for s in steps[i:]:
+                s.status = SKIPPED
+            ms = int((time.perf_counter() - start) * 1000)
+            return ms, NEEDS_REPLAN
+
         state["plan"]["current_index"] = i
         console.print(f"\n  [bold cyan]Step {i + 1}/{len(steps)}:[/bold cyan] {plan_step.action}")
         console.print(f"    [dim]{plan_step.reasoning}[/dim]")
@@ -194,6 +215,9 @@ async def _phase_execute(
             state = update_state(state, plan_step.action, result)
             result_keys = [k for k in result if k != "error"]
             console.print(f"    [green]✓ Updated: {result_keys}[/green] [dim]({step_ms}ms)[/dim]")
+
+        if plan_step.action not in SKILL_ACTIONS:
+            tools_executed += 1
 
     ms = int((time.perf_counter() - start) * 1000)
     if failures > 0:
@@ -268,7 +292,7 @@ async def generate_plan(
     # Cap to avoid bloating the prompt; see config for rationale
     capped = past_ideas[:config.MAX_PAST_IDEAS_FOR_PLANNING]
     past_ideas_summary = json.dumps(capped, indent=2) if capped else "None"
-
+    print(f"--------> state summary for planner: \n{state_summary(state)} <------")
     prompt = PLANNER_PROMPT.format(
         goal=goal,
         state_summary=state_summary(state),
