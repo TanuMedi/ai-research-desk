@@ -161,28 +161,26 @@ async def _phase_execute(
 ) -> tuple[int, str]:
     """Execute plan steps. Returns (duration_ms, status).
 
-    Executes tool steps (data gathering) first. When a skill step is
-    reached after at least one tool has run, execution pauses and returns
+    After github_search completes, execution pauses and returns
     NEEDS_REPLAN so the planner can re-evaluate with updated state —
     e.g. skip arXiv if GitHub already produced enough ideas.
 
-    Status is FAILED if any step fails, NEEDS_REPLAN if paused at a
-    skill boundary, OK if all steps completed.
+    Status is FAILED if any step fails, NEEDS_REPLAN if paused after
+    github_search, OK if all steps completed.
     """
     start = time.perf_counter()
     steps: list[PlanStep] = state["plan"]["steps"]
     failures = 0
-    tools_executed = 0
+    github_executed = False
 
     for i, plan_step in enumerate(steps):
-        # Pause before skills if we've gathered data — replan to reassess
-        if plan_step.action in SKILL_ACTIONS and tools_executed > 0:
+        # Pause after github_search — replan to reassess before more tools/skills
+        if github_executed:
             remaining = len(steps) - i
             console.print(
-                f"\n  [dim]Pausing before skills ({remaining} steps remaining) "
+                f"\n  [dim]Pausing after github_search ({remaining} steps remaining) "
                 f"— replanning with updated state[/dim]"
             )
-            # Mark remaining steps as skipped
             for s in steps[i:]:
                 s.status = SKIPPED
             ms = int((time.perf_counter() - start) * 1000)
@@ -216,8 +214,8 @@ async def _phase_execute(
             result_keys = [k for k in result if k != "error"]
             console.print(f"    [green]✓ Updated: {result_keys}[/green] [dim]({step_ms}ms)[/dim]")
 
-        if plan_step.action not in SKILL_ACTIONS:
-            tools_executed += 1
+        if plan_step.action == "github_search":
+            github_executed = True
 
     ms = int((time.perf_counter() - start) * 1000)
     if failures > 0:
