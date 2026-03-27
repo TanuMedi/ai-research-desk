@@ -42,9 +42,9 @@ async def _score_ideas(ideas: list, llm: LLMClient) -> dict[str, Any]:
             raw = await llm.complete(prompt)
             scores = _parse_json(raw)
             avg = sum(scores.values()) / len(scores) if scores else 0
-            details.append({"idea": getattr(idea, "paper_title", ""), "scores": scores, "average": round(avg, 1)})
+            details.append({"idea": getattr(idea, "source_title", ""), "scores": scores, "average": round(avg, 1)})
         except Exception:
-            details.append({"idea": getattr(idea, "paper_title", ""), "scores": {}, "average": 0})
+            details.append({"idea": getattr(idea, "source_title", ""), "scores": {}, "average": 0})
 
     overall = sum(d["average"] for d in details) / len(details) if details else 0
     return {"average": round(overall, 1), "details": details}

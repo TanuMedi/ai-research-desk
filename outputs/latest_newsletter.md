@@ -1,90 +1,100 @@
 # Weekly AI Research Digest — 2026-Mar-W13
 
-## Top Papers
+## Top Repos
 
-- **[A Context Engineering Framework for Improving Enterprise AI Agents based on Digital-Twin MDP](http://arxiv.org/abs/2603.22083v1)**
-  The paper introduces a model-agnostic framework for enhancing LLM-based enterprise agents using offline reinforcement learning via a Digital-Twin MDP approach.
+- **[Siddhant-Goswami/100x-LLM](https://github.com/Siddhant-Goswami/100x-LLM)**
+  A comprehensive resource for implementing large language model and agentic applications with practical examples.
 
-- **[ROM: Real-time Overthinking Mitigation via Streaming Detection and Intervention](http://arxiv.org/abs/2603.22016v1)**
-  The paper introduces ROM, a method for mitigating overthinking in large reasoning models using real-time streaming detection and intervention.
+- **[facebookresearch/Pearl](https://github.com/facebookresearch/Pearl)**
+  A production-ready library for reinforcement learning AI agents developed by Meta's Applied Reinforcement Learning team.
 
-- **[ThinkJEPA: Empowering Latent World Models with Large Vision-Language Reasoning Model](http://arxiv.org/abs/2603.22281v1)**
-  The paper proposes a VLM-guided JEPA-style latent world modeling framework that combines dense-frame dynamics modeling with long-horizon semantic guidance.
+- **[panaverse/learn-generative-ai](https://github.com/panaverse/learn-generative-ai)**
+  Learn how to apply generative AI technologies in cloud environments using various tools and platforms.
 
-- **[3D-Layout-R1: Structured Reasoning for Language-Instructed Spatial Editing](http://arxiv.org/abs/2603.22279v1)**
-  The paper introduces a Structured Reasoning framework that enhances spatial layout editing by reasoning over scene graphs based on natural-language instructions.
+- **[ilsilfverskiold/Awesome-LLM-Resources-List](https://github.com/ilsilfverskiold/Awesome-LLM-Resources-List)**
+  A curated collection of resources for applied AI engineering, focusing on serverless hosting of private and open-source LLM models.
 
-- **[TiCo: Time-Controllable Training for Spoken Dialogue Models](http://arxiv.org/abs/2603.22267v1)**
-  The core contribution of the paper is TiCo, a post-training method that allows spoken dialogue models to generate time-controllable responses.
+- **[PyPatel/Machine-Learning-and-AI-in-Trading](https://github.com/PyPatel/Machine-Learning-and-AI-in-Trading)**
+  The repository applies machine learning and AI algorithms, particularly LSTMs, to predict stock prices for enhanced trading performance.
 
-- **[Seeing is Improving: Visual Feedback for Iterative Text Layout Refinement](http://arxiv.org/abs/2603.22187v1)**
-  The core contribution of the paper is the introduction of visual feedback as a critical factor in improving the quality of text layout generation using the Visual Feedback Layout Model (VFLM).
+- **[OneRedOak/claude-code-workflows](https://github.com/OneRedOak/claude-code-workflows)**
+  Automated workflows for code, security, and design reviews using Claude Code, inspired by Anthropic's AI development processes.
 
-- **[MARCUS: An agentic, multimodal vision-language model for cardiac diagnosis and management](http://arxiv.org/abs/2603.22179v1)**
-  MARCUS is a multimodal vision-language model designed for end-to-end cardiac test interpretation, demonstrating superior accuracy over current models.
+- **[adithya-s-k/AI-Engineering.academy](https://github.com/adithya-s-k/AI-Engineering.academy)**
+  AI Engineering Academy provides structured learning paths to simplify and teach complex AI concepts.
 
-- **[On the Direction of RLVR Updates for LLM Reasoning: Identification and Exploitation](http://arxiv.org/abs/2603.22117v1)**
-  The paper demonstrates the importance of focusing on the direction of RLVR updates to improve the reasoning capabilities of large language models.
+- **[meta-pytorch/applied-ai](https://github.com/meta-pytorch/applied-ai)**
+  The repository showcases applied AI experiments and examples utilizing PyTorch, focusing on performance optimization through specialized Triton and CUDA kernels.
 
 ## Key Trends
 
-- **document-processing** (2 papers)
-- **risk-management** (2 papers)
-- **trajectory-prediction** (2 papers)
-- **customer-service** (2 papers)
-- **risk management** (2 papers)
-- **offline-RL** (1 papers)
-- **LLM enhancement** (1 papers)
-- **enterprise AI** (1 papers)
+- **customer-service** (3 ideas)
+- **compliance-automation** (2 ideas)
+- **trading-systems** (2 ideas)
+- **risk-management** (2 ideas)
+- **generative-ai** (2 ideas)
+- **LLM applications** (1 ideas)
+- **AI agents** (1 ideas)
+- **prompt-engineering** (1 ideas)
 
 ## Selected Ideas for Demo
 
-### Idea 1: A Context Engineering Framework for Improving Enterprise AI Agents based on Digital-Twin MDP
+### Idea 1: Siddhant-Goswami/100x-LLM
 
-**Key Idea:** The paper introduces a model-agnostic framework for enhancing LLM-based enterprise agents using offline reinforcement learning via a Digital-Twin MDP approach.
+**Key Idea:** A comprehensive resource for implementing large language model and agentic applications with practical examples.
 
-**Methods:** The framework employs a Digital-Twin Markov Decision Process, contrastive inverse reinforcement learning, and RL-guided context engineering to refine agent decision-making.
+**Methods:** Techniques include full-stack AI applications, prompt engineering, tool calling, RAG, LLM workflows, and AI agents.
 
-**Novelty:** Novel (similarity score: 0.00)
+**Novelty:** Novel (similarity score: 1.00)
 
-**Tags:** offline-RL, LLM enhancement, enterprise AI, IT automation, context engineering
+**Tags:** LLM applications, AI agents, prompt-engineering, compliance-automation, customer-service
 
-**Source:** [A Context Engineering Framework for Improving Enterprise AI Agents based on Digital-Twin MDP](http://arxiv.org/abs/2603.22083v1)
+**Source:** [Siddhant-Goswami/100x-LLM](https://github.com/Siddhant-Goswami/100x-LLM) (GitHub)
 
-> Despite rapid progress in AI agents for enterprise automation and decision-making, their real-world deployment and further performance gains remain constrained by limited data quality and quantity, complex real-world reasoning demands, difficulties with self-play, and the lack of reliable feedback s...
+> Code snippets and examples from the 100x Applied AI cohort lectures.
 
-### Idea 2: ROM: Real-time Overthinking Mitigation via Streaming Detection and Intervention
+# 100x Applied AI - Complete Learning Guide
 
-**Key Idea:** The paper introduces ROM, a method for mitigating overthinking in large reasoning models using real-time streaming detection and intervention.
+Welcome to the 100x Applied AI repository! This is a comprehensive resource for learning and implementing  Large Language Model (LLM) & Agentic applications. Whether you're a complete b...
 
-**Methods:** ROM uses a lightweight detection head attached to a frozen LLM backbone to monitor tokens and trigger early transitions, coupled with token-level supervision and data augmentation.
+### Idea 2: facebookresearch/Pearl
 
-**Novelty:** Novel (similarity score: 0.00)
+**Key Idea:** A production-ready library for reinforcement learning AI agents developed by Meta's Applied Reinforcement Learning team.
 
-**Tags:** overthinking-mitigation, real-time-detection, LLM-efficiency, operational-workflows, document-processing
+**Methods:** The library uses advanced reinforcement learning techniques to develop AI agents that are ready for production environments.
 
-**Source:** [ROM: Real-time Overthinking Mitigation via Streaming Detection and Intervention](http://arxiv.org/abs/2603.22016v1)
+**Novelty:** Novel (similarity score: 1.00)
 
-> Large Reasoning Models (LRMs) achieve strong accuracy on challenging tasks by generating long Chain-of-Thought traces, but suffer from overthinking. Even after reaching the correct answer, they continue generating redundant reasoning steps. This behavior increases latency and compute cost and can al...
+**Tags:** reinforcement-learning, AI-agents, trading-systems, risk-management
+
+**Source:** [facebookresearch/Pearl](https://github.com/facebookresearch/Pearl) (GitHub)
+
+> A Production-ready Reinforcement Learning AI Agent Library brought by the Applied Reinforcement Learning team at Meta. 
+
+![alt](./logo/pearl_long.png)
+# Pearl - A Production-ready Reinforcement Learning AI Agent Library
+### Proudly brought by Applied Reinforcement Learning @ Meta
+
+- v0.1 - Pearl bet...
 
 ## Proposed Demos
 
-### Demo 1: Digital-Twin MDP for Enhanced Enterprise AI Agents
+### Demo 1: 100x LLM-Based Financial Applications
 
-**Why it matters:** By leveraging a Digital-Twin MDP framework, financial services firms can significantly improve the decision-making of their AI agents, leading to enhanced operational efficiency, reduced processing times, and improved customer service. This can result in cost savings and better regulatory compliance through more accurate and reliable automated processes.
+**Why it matters:** Implementing large language model applications offers transformative benefits such as automating compliance processes and enhancing customer service interactions. This can lead to significant cost savings and reduced operational risk by ensuring real-time compliance checks and faster issue resolution.
 
-**Novelty:** This framework introduces a novel approach by integrating offline reinforcement learning with context engineering, making it model-agnostic and suitable for enterprise environments, unlike existing solutions that often depend on live data and narrower models.
+**Novelty:** This proposal leverages state-of-the-art techniques like RAG and prompt engineering to advance beyond traditional models, offering better accuracy and efficiency in LLM applications for financial services.
 
-**Demo scope:** A feasible MVP demo could involve enhancing an AI agent responsible for trade execution strategies. Using historical trading data and transaction logs, the agent would simulate and optimize decision-making processes with the Digital-Twin MDP framework, displaying improvements in execution efficiency and accuracy within a sandbox environment.
+**Demo scope:** Develop a prototype that automates regulatory compliance checks using an LLM. The demo will process sample regulatory filings and market data to ensure automated compliance and respond to customer inquiries accurately. The emphasis will be on demonstrating real-time processing capabilities and precise compliance automation.
 
-**Data requirements:** Required data includes historical market data, sample transaction records, and potentially synthetic datasets to satisfy data privacy regulations. Compliance with data protection policies and anonymization of transaction records are critical to ensure privacy and security during the development and demonstration of the prototype.
+**Data requirements:** Access to compliant market data APIs, synthetic versions of regulatory filings, and test transaction datasets. It must ensure compliance with data privacy regulations like GDPR and adhere to stringent data security protocols typical in financial services.
 
-### Demo 2: ROM: Real-time Overthinking Mitigation for Financial Document Processing
+### Demo 2: Integration of Pearl for Enhanced Trading Systems
 
-**Why it matters:** For a FinServ AI team, ROM provides a breakthrough in reducing processing costs and improving efficiency by optimizing the decision-making process of LLMs. This ensures faster transaction processing and enhances real-time decision-making capabilities, crucial for risk management and regulatory compliance.
+**Why it matters:** Integrating Pearl into trading systems could revolutionize algorithmic trading by optimizing decision-making processes, directly resulting in significant cost savings and improved risk management. This can lead to faster processing of transactions and enhanced operational efficiency, while ensuring robust compliance with financial regulations.
 
-**Novelty:** ROM introduces a novel approach by adding a lightweight detection head to monitor and intervene in real-time, which is unconventional compared to traditional post-processing techniques in overthinking mitigation.
+**Novelty:** Pearl stands out due to its advanced reinforcement learning methods which enable AI agents to adapt rapidly to dynamic financial markets, unlike traditional algorithms. This adaptability can provide a competitive edge by responding effectively to market volatility.
 
-**Demo scope:** The MVP demo will involve setting up ROM to process a stream of financial documents such as transaction reports and compliance filings. Utilizing a frozen LLM backbone, the demo will showcase early intervention during data stream analysis to reduce model computation time without compromising accuracy, using simulated market data and public financial reports.
+**Demo scope:** Develop a prototype that uses Pearl's reinforcement learning agents to optimize trades in a simulated trading environment. The MVP would focus on a specific asset class like equities, leveraging real-time market data APIs to simulate trading strategies and evaluate their effectiveness under varying market conditions.
 
-**Data requirements:** The demo will require access to market data APIs, transaction datasets, and public regulatory filings. It's crucial to ensure that these data sources comply with financial data privacy regulations such as GDPR or any specific local data protection laws.
+**Data requirements:** The demo requires access to historical and real-time market data, potentially sourced from financial market data API providers like Bloomberg or Alpha Vantage. Ensuring data privacy and compliance with financial regulations such as GDPR and PCI DSS is crucial when handling any customer-specific transaction data.

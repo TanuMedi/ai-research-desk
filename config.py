@@ -56,7 +56,7 @@ NOVELTY_THRESHOLD = 0.30  # Jaccard similarity cutoff; above this → "increment
 REPORT_TOP_PAPERS_COUNT = 8  # how many top papers to feature in the newsletter
 
 # Agent loop
-MAX_CYCLES = 3  # max plan→execute→critique cycles before stopping
+MAX_CYCLES = 2 # max plan→execute→critique cycles before stopping
 # Cap past ideas sent to planner to avoid bloating the prompt;
 # 20 covers ~5 weeks at 3-5 ideas/week, enough for novelty comparison.
 MAX_PAST_IDEAS_FOR_PLANNING = 20

@@ -3,25 +3,29 @@ import json
 
 from models.idea import Idea
 from models.paper import Paper
-from utils.llm_client import LLMClient
+from models.repo import Repo
+from utils.llm_client import LLMClient, parse_llm_json
 from utils.prompts import SUMMARIZE_PAPER_PROMPT
 
 
-async def summarize_paper(paper: Paper, llm: LLMClient) -> Idea | None:
-    """Summarize a single paper via LLM. Returns None if parsing fails after retry."""
-    prompt = SUMMARIZE_PAPER_PROMPT.format(
-        title=paper.title,
-        abstract=paper.summary,
-    )
+async def summarize_source(
+    title: str, summary: str, link: str, source: str, llm: LLMClient,
+) -> Idea | None:
+    """Summarize a single source (paper or repo) via LLM. Returns None if parsing fails."""
+    prompt = SUMMARIZE_PAPER_PROMPT.format(title=title, abstract=summary)
 
     for attempt in range(2):
         try:
-            raw = await llm.complete(prompt if attempt == 0 else prompt + "\nIMPORTANT: Return ONLY a raw JSON object. No markdown, no backticks, no explanation.")
-            parsed = _parse_json(raw)
+            raw = await llm.complete(
+                prompt if attempt == 0
+                else prompt + "\nIMPORTANT: Return ONLY a raw JSON object. No markdown, no backticks, no explanation."
+            )
+            parsed = parse_llm_json(raw)
             return Idea(
-                paper_title=paper.title,
-                paper_summary=paper.summary,
-                paper_link=paper.link,
+                source_title=title,
+                source_summary=summary,
+                source_link=link,
+                source=source,
                 key_idea=parsed.get("key_idea", ""),
                 methods=parsed.get("methods", ""),
                 agent_relevance=bool(parsed.get("agent_relevance", False)),
@@ -35,15 +39,23 @@ async def summarize_paper(paper: Paper, llm: LLMClient) -> Idea | None:
 
 async def summarize_papers_batch(papers: list[Paper], llm: LLMClient) -> list[Idea]:
     """Concurrently summarize all papers, dropping any that fail."""
-    results = await asyncio.gather(*[summarize_paper(p, llm) for p in papers])
+    results = await asyncio.gather(*[
+        summarize_source(p.title, p.summary, p.link, "arxiv", llm)
+        for p in papers
+    ])
     return [r for r in results if r is not None]
 
 
-def _parse_json(text: str) -> dict:
-    """Strip markdown fences if present, then parse JSON."""
-    text = text.strip()
-    if text.startswith("```"):
-        lines = text.splitlines()
-        # Drop first and last fence lines
-        text = "\n".join(lines[1:-1] if lines[-1].strip() == "```" else lines[1:])
-    return json.loads(text)
+async def summarize_repos_batch(repos: list[Repo], llm: LLMClient) -> list[Idea]:
+    """Concurrently summarize all repos, dropping any that fail."""
+    results = await asyncio.gather(*[
+        summarize_source(
+            r.full_name,
+            (r.description + "\n\n" + r.readme[:1500]).strip(),
+            r.url,
+            "github",
+            llm,
+        )
+        for r in repos
+    ])
+    return [r for r in results if r is not None]

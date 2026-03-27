@@ -30,7 +30,7 @@ async def run(state: dict[str, Any], idea_indices: list[int] | None = None) -> d
 async def generate_proposal(idea: Idea, llm: LLMClient) -> Proposal:
     """Generate a demo proposal for a given idea via LLM."""
     prompt = GENERATE_PROPOSAL_PROMPT.format(
-        idea_title=idea.paper_title,
+        idea_title=idea.source_title,
         key_idea=idea.key_idea,
         methods=idea.methods,
         tags=", ".join(idea.tags),
@@ -45,7 +45,7 @@ async def generate_proposal(idea: Idea, llm: LLMClient) -> Proposal:
             )
             parsed = parse_llm_json(raw)
             return Proposal(
-                idea_title=parsed.get("idea_title", idea.paper_title),
+                idea_title=parsed.get("idea_title", idea.source_title),
                 why_it_matters=parsed.get("why_it_matters", ""),
                 novelty=parsed.get("novelty", ""),
                 demo_scope=parsed.get("demo_scope", ""),
@@ -55,14 +55,14 @@ async def generate_proposal(idea: Idea, llm: LLMClient) -> Proposal:
             if attempt == 1:
                 # Fallback: return a minimal proposal
                 return Proposal(
-                    idea_title=idea.paper_title,
+                    idea_title=idea.source_title,
                     why_it_matters=idea.key_idea,
                     novelty=idea.novelty_label,
                     demo_scope="To be defined.",
                     data_requirements="To be defined.",
                 )
     return Proposal(
-        idea_title=idea.paper_title,
+        idea_title=idea.source_title,
         why_it_matters=idea.key_idea,
         novelty=idea.novelty_label,
         demo_scope="To be defined.",

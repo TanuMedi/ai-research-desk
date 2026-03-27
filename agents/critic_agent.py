@@ -54,7 +54,7 @@ async def evaluate_proposals(
     scores_json = json.dumps(
         [
             {
-                "title": getattr(i, "paper_title", ""),
+                "title": getattr(i, "source_title", ""),
                 "final_score": getattr(i, "final_score", 0),
                 "novelty": getattr(i, "novelty_score", 0),
                 "leverage": getattr(i, "leverage_score", 0),

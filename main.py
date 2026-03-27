@@ -37,7 +37,7 @@ def print_scores_table(scored_ideas: list) -> None:
     for i, idea in enumerate(scored_ideas[:8], 1):
         table.add_row(
             str(i),
-            getattr(idea, "paper_title", "")[:40],
+            getattr(idea, "source_title", "")[:40],
             f"{getattr(idea, 'final_score', 0):.2f}",
             f"{getattr(idea, 'novelty_score', 0):.2f}",
             f"{getattr(idea, 'leverage_score', 0):.2f}",

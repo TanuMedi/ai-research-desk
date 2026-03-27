@@ -9,6 +9,9 @@ from typing import Any
 import httpx
 
 import config
+from models.repo import Repo
+from utils.llm_client import LLMClient
+from utils.summarizer import summarize_repos_batch
 
 # ---------------------------------------------------------------------------
 # MCP-style schema
@@ -21,7 +24,7 @@ TOOL_SCHEMA = {
         "max_results": {"type": "integer", "description": "Max repos to return (default: 10)"},
     },
     "use_when": "You need real-world implementations, reusable code, or leverage scores for ideas.",
-    "produces": ["repo_results"],
+    "produces": ["repo_results", "ideas"],
 }
 
 _GITHUB_API = "https://api.github.com"
@@ -32,10 +35,21 @@ async def run(tool_input: dict[str, Any], state: dict[str, Any]) -> dict[str, An
     query = tool_input.get("query", "")
     max_results = tool_input.get("max_results", 10)
     repos = await search_repos(query, max_results)
-    return {"repo_results": repos}
+
+    # Summarize repos into Ideas via LLM
+    llm: LLMClient = state.get("_llm")
+    ideas = []
+    if llm and repos:
+        ideas = await summarize_repos_batch(repos, llm)
+        ideas = [i for i in ideas if i.agent_relevance]
+
+    return {
+        "repo_results": [r.model_dump() for r in repos],
+        "ideas": ideas,
+    }
 
 
-async def search_repos(query: str, max_results: int = 10) -> list[dict[str, Any]]:
+async def search_repos(query: str, max_results: int = 10) -> list[Repo]:
     """Search GitHub and return enriched repo metadata."""
     headers = _auth_headers()
     async with httpx.AsyncClient(timeout=30) as client:
@@ -47,60 +61,74 @@ async def search_repos(query: str, max_results: int = 10) -> list[dict[str, Any]
         resp.raise_for_status()
         items = resp.json().get("items", [])
 
-        results: list[dict[str, Any]] = []
+        results: list[Repo] = []
         for item in items:
-            repo = {
-                "full_name": item["full_name"],
-                "description": item.get("description", ""),
-                "stars": item.get("stargazers_count", 0),
-                "language": item.get("language", ""),
-                "url": item.get("html_url", ""),
-                "topics": item.get("topics", []),
-                "readme": "",
-                "files": [],
-            }
+            full_name = item["full_name"]
+            description = item.get("description", "") or ""
+            files: list[str] = []
+            readme = ""
 
             # Fetch file list (root level)
             try:
                 contents_resp = await client.get(
-                    f"{_GITHUB_API}/repos/{item['full_name']}/contents",
+                    f"{_GITHUB_API}/repos/{full_name}/contents",
                     headers=headers,
                 )
                 if contents_resp.status_code == 200:
-                    repo["files"] = [f["name"] for f in contents_resp.json() if isinstance(f, dict)]
+                    files = [f["name"] for f in contents_resp.json() if isinstance(f, dict)]
             except httpx.HTTPError:
                 pass
 
             # Fetch README
             try:
                 readme_resp = await client.get(
-                    f"{_GITHUB_API}/repos/{item['full_name']}/readme",
+                    f"{_GITHUB_API}/repos/{full_name}/readme",
                     headers=headers,
                 )
                 if readme_resp.status_code == 200:
                     content = readme_resp.json().get("content", "")
-                    repo["readme"] = base64.b64decode(content).decode("utf-8", errors="replace")[:2000]
+                    readme = base64.b64decode(content).decode("utf-8", errors="replace")[:2000]
             except httpx.HTTPError:
                 pass
 
-            repo["leverage_score"] = compute_leverage(repo)
+            repo = Repo(
+                full_name=full_name,
+                description=description,
+                stars=item.get("stargazers_count", 0),
+                language=item.get("language", "") or "",
+                url=item.get("html_url", ""),
+                topics=item.get("topics", []),
+                readme=readme,
+                files=files,
+            )
+            repo.leverage_score = compute_leverage(repo)
             results.append(repo)
 
         return results
 
 
-def compute_leverage(repo: dict[str, Any]) -> float:
-    """Compute a 0-1 leverage score based on repo characteristics."""
+def compute_leverage(repo: Repo | dict[str, Any]) -> float:
+    """Compute a 0-1 leverage score based on repo characteristics.
+
+    Accepts a Repo model or a plain dict (e.g. from state["repo_results"]).
+    """
     score = 0.0
-    readme = repo.get("readme", "").lower()
+    if isinstance(repo, dict):
+        readme = repo.get("readme", "").lower()
+        files = repo.get("files", [])
+        stars = repo.get("stars", 0)
+    else:
+        readme = repo.readme.lower()
+        files = repo.files
+        stars = repo.stars
 
     if "streamlit" in readme:
         score += 0.4
     if "fastapi" in readme:
         score += 0.3
-    if "requirements.txt" in repo.get("files", []):
+    if "requirements.txt" in files:
         score += 0.2
-    if repo.get("stars", 0) > 500:
+    if stars > 500:
         score += 0.1
 
     return min(score, 1.0)
