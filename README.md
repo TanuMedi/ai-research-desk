@@ -10,7 +10,7 @@ An end-to-end agentic AI system with a planner–executor loop that autonomously
 The system operates as an autonomous research agent with a planner–executor–critic loop that dynamically decides what to do next based on intermediate results.
 ```mermaid
 flowchart TD
-    A[Bootstrap: GitHub Retrieval] --> B[Planner (State-Aware)]
+    A[Bootstrap: GitHub Retrieval] --> B[Planner State-Aware]
     B --> C[Execute Tool]
     C --> D[Update State]
     D --> B
