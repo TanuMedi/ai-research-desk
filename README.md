@@ -9,22 +9,12 @@ An end-to-end agentic AI system with a planner–executor loop that autonomously
 ## How it works
 The system operates as an autonomous research agent with a planner–executor–critic loop that dynamically decides what to do next based on intermediate results.
 ```mermaid
-graph TD
-    A[Goal] --> B[Plan — LLM generates ordered steps]
-    B --> C[Execute — Tools + Skills]
-    C --> D{Skills reached?}
-    D -->|Yes, tools ran| E[Replan with updated state]
-    E --> B
-    D -->|No| F[Continue execution]
-    F --> G[Critique — Sub-agent reviews proposals]
-    G -->|Needs improvement| B
-    G -->|Approved| H[Evaluation + Newsletter]
-
-    C --> T1[GitHub Tool]
-    C --> T2[arXiv Tool]
-    C --> T3[Memory Tool]
-    C --> S1[Score Ideas — Skill]
-    C --> S2[Generate Proposals — Skill]
+flowchart TD
+    A[Bootstrap: GitHub Retrieval] --> B[Planner (State-Aware)]
+    B --> C[Execute Tool]
+    C --> D[Update State]
+    D --> B
+    B --> E[Final Proposal]
 ```
 
 ### Plan → Execute → Critique cycle
@@ -32,7 +22,7 @@ graph TD
 The agent runs an iterative planner–executor–critic loop (up to `MAX_CYCLES`, default: 2), adapting its strategy based on intermediate results:
 
 1. **Plan** — LLM generates an ordered list of steps from the goal, current state, available tools/skills, and past ideas
-2. **Execute** — steps are dispatched to tools (external APIs) or skills (internal processing). The executor pauses before skill steps if tools have already gathered data, forcing a replan so the planner can reassess and avoid redundant work — e.g., skip arXiv if GitHub already found sufficient high-quality ideas
+2. **Execute** — steps are dispatched to tools (external APIs) or skills (internal processing). The executor pauses after `github_search` completes, forcing a replan so the planner can reassess with updated state — e.g., skip arXiv if GitHub already found sufficient high-quality ideas
 3. **Critique** — a sub-agent reviews proposals for specificity, feasibility, and differentiation. If improvements are needed, the cycle repeats
 
 After the loop, evaluation runs (LLM-as-judge + tool efficiency metrics) and a newsletter is generated.
@@ -160,7 +150,7 @@ See a sample output: [outputs/latest_newsletter.md](outputs/latest_newsletter.md
 ## Design decisions
 
 - **Plan → Execute → Critique cycles** — the agent dynamically plans which tools to call, executes them, then a critic sub-agent reviews output quality before the cycle repeats
-- **Two-phase planning** — the executor pauses before skill steps to force a replan with updated state, enabling conditional tool usage (e.g., skip arXiv if GitHub already found enough ideas)
+- **Iterative planning with forced replanning checkpoint** — the executor pauses after `github_search` to force a replan with updated state, enabling conditional tool usage (e.g., skip arXiv if GitHub already found enough ideas)
 - **Tools vs Skills** — tools call external APIs with MCP-style schemas; skills are internal processing that operate directly on state. This separation keeps the tool registry clean and skills composable
 - **Source-aware ideas** — ideas track their origin (`arxiv` or `github`) through the `source` field, reflected in scoring, storage, and newsletter output
 - **Multi-factor scoring** — combines novelty (Jaccard vs past ideas), leverage (GitHub repo signals), relevance (keyword match), and feasibility (repo completeness)
