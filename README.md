@@ -1,81 +1,92 @@
-# AI Research Desk (V2 — Agentic + MCP-Style)
+# AI Research Desk
 
-An agentic AI system for applied AI teams at financial firms. It dynamically searches GitHub, blogs, and arXiv for relevant ideas, scores them using multi-factor ranking, generates demo proposals, and evaluates its own output quality.
+## TL;DR
 
-See a real output: [outputs/latest_newsletter.md](outputs/latest_newsletter.md)
+An end-to-end agentic AI system with a planner–executor loop that autonomously discovers, evaluates, and synthesizes GitHub and arXiv content into implementation-ready AI proposals using custom scoring and decision logic. Run it with `python main.py`.
+
+---
 
 ## How it works
-
+The system operates as an autonomous research agent with a planner–executor–critic loop that dynamically decides what to do next based on intermediate results.
 ```mermaid
 graph TD
-    A[Goal] --> B[Agent Loop — LLM Decision Engine]
-    B --> C[Tool Registry — MCP-style]
-    C --> D[GitHub Tool]
-    C --> E[Blog Tool]
-    C --> F[arXiv Tool]
-    C --> G[Memory Tool]
+    A[Goal] --> B[Plan — LLM generates ordered steps]
+    B --> C[Execute — Tools + Skills]
+    C --> D{Skills reached?}
+    D -->|Yes, tools ran| E[Replan with updated state]
+    E --> B
+    D -->|No| F[Continue execution]
+    F --> G[Critique — Sub-agent reviews proposals]
+    G -->|Needs improvement| B
+    G -->|Approved| H[Evaluation + Newsletter]
 
-    B -->|STOP| H[Post-Loop Pipeline]
-    H --> I[Multi-Factor Scoring]
-    I --> J[Proposal Generation]
-    J --> K[Critic Agent]
-    K --> L[Async Approval — JSON]
-    L -->|Approved| M[Demo Scaffolding]
-
-    B --> N[Evaluation Layer]
+    C --> T1[GitHub Tool]
+    C --> T2[arXiv Tool]
+    C --> T3[Memory Tool]
+    C --> S1[Score Ideas — Skill]
+    C --> S2[Generate Proposals — Skill]
 ```
 
-### Agent Loop (dynamic, LLM-driven)
-The agent decides which tools to call based on current state. Applied sources first:
-1. **GitHub** — search repos for real implementations, compute leverage scores
-2. **Blogs** — fetch from OpenAI, Anthropic, LangChain blogs for practical techniques
-3. **Memory** — load past ideas from SQLite for novelty comparison
-4. **arXiv** — fetch cs.AI papers when applied sources lack novelty
+### Plan → Execute → Critique cycle
 
-### Post-Loop Pipeline (fixed order)
-After data gathering, these steps always run:
-1. **Scoring** — multi-factor ranking (novelty 30% + leverage 30% + relevance 25% + feasibility 15%)
-2. **Proposals** — LLM generates demo proposals for the top 2 ideas
-3. **Critic** — LLM reviews proposals for specificity, feasibility, differentiation
-4. **Approval** — proposals written to `storage/proposals.json` as pending
-5. **Demo scaffolding** — generates `app.py` + `backend.py` + `README.md` for approved ideas
-6. **Evaluation** — LLM-as-judge scores idea quality, proposal quality, and tool efficiency
+The agent runs an iterative planner–executor–critic loop (up to `MAX_CYCLES`, default: 2), adapting its strategy based on intermediate results:
+
+1. **Plan** — LLM generates an ordered list of steps from the goal, current state, available tools/skills, and past ideas
+2. **Execute** — steps are dispatched to tools (external APIs) or skills (internal processing). The executor pauses before skill steps if tools have already gathered data, forcing a replan so the planner can reassess and avoid redundant work — e.g., skip arXiv if GitHub already found sufficient high-quality ideas
+3. **Critique** — a sub-agent reviews proposals for specificity, feasibility, and differentiation. If improvements are needed, the cycle repeats
+
+After the loop, evaluation runs (LLM-as-judge + tool efficiency metrics) and a newsletter is generated.
+
+### Tools vs Skills vs Sub-agents
+
+| Type | What it does | Examples |
+|------|-------------|----------|
+| **Tool** | Calls external APIs, registered in tool registry with MCP-style schemas | `github_search`, `arxiv_search`, `memory` |
+| **Skill** | Internal processing, operates on state directly | `score_ideas`, `generate_proposals` |
+| **Sub-agent** | Evaluates output quality | `critic` |
+
+### Data sources
+
+- **GitHub** (searched first) — repos for real implementations, computes leverage scores, summarizes into Ideas via LLM
+- **arXiv** (fallback) — cs.AI papers, used when GitHub yields fewer than 3 ideas or novelty is low
+- **Memory** — SQLite DB of past ideas for novelty comparison (capped to last 4 weeks)
+
+### Scoring
+
+Ideas are ranked using a weighted scoring framework: **novelty** (30%) + **leverage** (30%) + **relevance** (25%) + **feasibility** (15%), combining historical comparison, repository signals, and keyword alignment.
 
 ## Project structure
 
 ```
 ai-research-desk/
 ├── agents/
-│   ├── agent_loop.py          # Core LLM decision loop
-│   └── critic_agent.py        # Proposal quality gate
+│   ├── agent_loop.py          # Plan → Execute → Critique cycle
+│   └── critic_agent.py        # Proposal quality sub-agent
 ├── tools/
 │   ├── registry.py            # MCP-style tool registry
-│   ├── arxiv_tool.py          # arXiv API + summarization
-│   ├── github_tool.py         # GitHub search + leverage scoring
-│   ├── blog_tool.py           # RSS feed fetching
-│   ├── memory_tool.py         # SQLite persistence + novelty detection
-│   └── proposal_tool.py       # LLM proposal generation
-├── analysis/
-│   └── scoring.py             # Multi-factor scoring system
+│   ├── github_tool.py         # GitHub search + Repo model + summarization
+│   ├── arxiv_tool.py          # arXiv API + paper summarization
+│   └── memory_tool.py         # SQLite persistence + novelty detection
+├── skills/
+│   ├── scoring.py             # Multi-factor idea scoring
+│   └── proposal_generation.py # LLM proposal generation
+├── models/
+│   ├── paper.py               # arXiv paper model
+│   ├── repo.py                # GitHub repo model
+│   ├── idea.py                # Idea model (source-aware, with scores)
+│   └── proposal.py            # Demo proposal model
+├── executor/
+│   ├── state_manager.py       # Shared agent state + status constants
+│   └── tool_executor.py       # Tool invocation + logging
 ├── evaluation/
 │   └── evaluator.py           # LLM-as-judge + efficiency metrics
-├── executor/
-│   ├── state_manager.py       # Shared agent state
-│   ├── tool_executor.py       # Tool invocation + logging
-│   ├── approval.py            # Async JSON-based approval
-│   └── demo_generator.py      # Streamlit demo scaffolding
-├── models/
-│   ├── paper.py               # Paper dataclass
-│   ├── idea.py                # Idea dataclass (with score fields)
-│   └── proposal.py            # Proposal dataclass
 ├── utils/
 │   ├── llm_client.py          # Claude / OpenAI async client
-│   ├── summarizer.py          # LLM paper summarization
+│   ├── summarizer.py          # LLM summarization (papers + repos)
 │   ├── helpers.py             # Newsletter generation + file I/O
 │   └── prompts.py             # All LLM prompt templates
-├── storage/                   # SQLite DB + logs + proposals.json
+├── storage/                   # SQLite DB + logs
 ├── outputs/                   # Generated newsletters
-├── demos/                     # Generated demo scaffolds
 ├── config.py                  # All configuration
 ├── main.py                    # Entry point
 └── requirements.txt
@@ -127,26 +138,31 @@ All settings live in [config.py](config.py):
 | `CLAUDE_MODEL` | `claude-sonnet-4-6` | Claude model ID |
 | `OPENAI_MODEL` | `gpt-4o` | OpenAI model ID |
 | `LLM_MAX_TOKENS` | `4096` | Max tokens per LLM call |
-| `MAX_STEPS` | `10` | Max agent loop iterations |
+| `MAX_CYCLES` | `2` | Max plan→execute→critique cycles |
 | `ARXIV_QUERY` | `cat:cs.AI` | arXiv category/query |
 | `MAX_PAPERS` | `30` | Max papers to fetch per run |
 | `DAYS_LOOKBACK` | `7` | How many days back to search |
 | `NOVELTY_THRESHOLD` | `0.30` | Jaccard similarity cutoff |
+| `MEMORY_WEEKS_LIMIT` | `4` | Weeks of past ideas to load |
+| `MAX_PAST_IDEAS_FOR_PLANNING` | `20` | Cap on past ideas in planner prompt |
+| `REPORT_TOP_IDEAS_COUNT` | `8` | Ideas per source in newsletter |
+| `GITHUB_TOKEN` | `""` | GitHub API token (env var) |
 
 ## Output
 
 Each run produces:
-- `outputs/latest_newsletter.md` — weekly digest with scores and proposals
-- `storage/proposals.json` — proposals with approval status (pending/approved/rejected)
+- `outputs/latest_newsletter.md` — weekly digest with scores and proposals, split by source (arXiv / GitHub)
 - `storage/logs/eval_<timestamp>.json` — evaluation scores (idea quality, proposal quality, tool efficiency)
 - `storage/logs/week_<label>.json` — full data snapshot
-- `demos/idea_<id>/` — generated demo scaffolds for approved ideas
 
-## Design Decisions
+See a sample output: [outputs/latest_newsletter.md](outputs/latest_newsletter.md)
 
-- **Applied sources first** — GitHub repos and blogs are searched before arXiv because the system is for applied AI teams, not deep research
-- **MCP-style tool registry** — tools are described by schema and selected dynamically by the LLM, enabling non-linear execution
-- **Agent loop + fixed pipeline** — data gathering is dynamic (LLM decides), but scoring → proposals → critic always run in order
-- **Multi-factor scoring** — combines novelty (Jaccard), leverage (GitHub signals), relevance (keyword match), and feasibility (repo completeness)
-- **Evaluation framework** — LLM-as-judge rates output quality; tool efficiency is tracked automatically
-- **Async approval** — proposals are written to JSON so approval can happen outside the run
+## Design decisions
+
+- **Plan → Execute → Critique cycles** — the agent dynamically plans which tools to call, executes them, then a critic sub-agent reviews output quality before the cycle repeats
+- **Two-phase planning** — the executor pauses before skill steps to force a replan with updated state, enabling conditional tool usage (e.g., skip arXiv if GitHub already found enough ideas)
+- **Tools vs Skills** — tools call external APIs with MCP-style schemas; skills are internal processing that operate directly on state. This separation keeps the tool registry clean and skills composable
+- **Source-aware ideas** — ideas track their origin (`arxiv` or `github`) through the `source` field, reflected in scoring, storage, and newsletter output
+- **Multi-factor scoring** — combines novelty (Jaccard vs past ideas), leverage (GitHub repo signals), relevance (keyword match), and feasibility (repo completeness)
+- **GitHub-first strategy** — GitHub repos are searched first for real implementations; arXiv is only used as a fallback when applied sources lack novelty
+- **Evaluation framework** — LLM-as-judge rates output quality; tool efficiency (redundant calls, success rate) is tracked automatically
