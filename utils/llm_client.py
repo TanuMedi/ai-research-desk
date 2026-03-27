@@ -1,3 +1,5 @@
+import json
+
 import config
 
 
@@ -24,7 +26,7 @@ class LLMClient:
         if self.provider == "claude":
             response = await self._client.messages.create(
                 model=self._model,
-                max_tokens=1024,
+                max_tokens=config.LLM_MAX_TOKENS,
                 messages=[{"role": "user", "content": prompt}],
             )
             return response.content[0].text
@@ -32,6 +34,15 @@ class LLMClient:
             response = await self._client.chat.completions.create(
                 model=self._model,
                 messages=[{"role": "user", "content": prompt}],
-                max_tokens=1024,
+                max_tokens=config.LLM_MAX_TOKENS,
             )
             return response.choices[0].message.content
+
+
+def parse_llm_json(text: str) -> dict:
+    """Parse JSON from LLM output, stripping markdown code fences if present."""
+    text = text.strip()
+    if text.startswith("```"):
+        lines = text.splitlines()
+        text = "\n".join(lines[1:-1] if lines[-1].strip() == "```" else lines[1:])
+    return json.loads(text)

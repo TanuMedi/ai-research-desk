@@ -1,10 +1,42 @@
 import json
 import sqlite3
 from datetime import datetime, timezone
+from typing import Any
 
 import config
 from models.idea import Idea
 from utils.helpers import current_week_label
+
+# ---------------------------------------------------------------------------
+# MCP-style schema
+# ---------------------------------------------------------------------------
+TOOL_SCHEMA = {
+    "name": "memory",
+    "description": "Load past ideas from the SQLite memory DB for novelty comparison, or persist new ideas.",
+    "input_schema": {
+        "action": {
+            "type": "string",
+            "enum": ["load", "store"],
+            "description": "'load' to fetch past ideas, 'store' to persist current ideas.",
+        },
+    },
+    "use_when": "You need to check idea novelty against past runs or save this week's ideas.",
+    "produces": ["past_ideas"],
+}
+
+
+async def run(tool_input: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
+    """MCP-style entry point."""
+    action = tool_input.get("action", "load")
+    if action == "store":
+        ideas = state.get("ideas", [])
+        if ideas:
+            store_weekly_ideas(ideas)
+        return {"stored_count": len(ideas)}
+    else:
+        weeks_limit = tool_input.get("weeks_limit", config.MEMORY_WEEKS_LIMIT)
+        past = get_past_ideas(weeks_limit=weeks_limit)
+        return {"past_ideas": past}
 
 
 def init_db() -> None:
@@ -14,8 +46,9 @@ def init_db() -> None:
             CREATE TABLE IF NOT EXISTS ideas (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 week TEXT,
-                paper_title TEXT,
-                paper_link TEXT,
+                source_title TEXT,
+                source_link TEXT,
+                source TEXT DEFAULT 'unknown',
                 key_idea TEXT,
                 tags TEXT,
                 novelty_label TEXT,
@@ -27,21 +60,30 @@ def init_db() -> None:
         conn.commit()
 
 
-def get_past_ideas() -> list[dict]:
-    """Fetch all previously stored ideas."""
+def get_past_ideas(weeks_limit: int | None = None) -> list[dict]:
+    """Fetch previously stored ideas, optionally capped to the most recent N weeks."""
     with _connect() as conn:
-        rows = conn.execute(
-            "SELECT paper_title, paper_link, key_idea, tags, novelty_label, demo_approved, demo_created FROM ideas"
-        ).fetchall()
+        if weeks_limit and weeks_limit > 0:
+            cutoff = _week_label_n_weeks_ago(weeks_limit)
+            rows = conn.execute(
+                "SELECT source_title, source_link, source, key_idea, tags, novelty_label, demo_approved, demo_created "
+                "FROM ideas WHERE week >= ? ORDER BY created_at DESC",
+                (cutoff,),
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                "SELECT source_title, source_link, source, key_idea, tags, novelty_label, demo_approved, demo_created FROM ideas"
+            ).fetchall()
     return [
         {
-            "paper_title": r[0],
-            "paper_link": r[1],
-            "key_idea": r[2],
-            "tags": json.loads(r[3]) if r[3] else [],
-            "novelty_label": r[4],
-            "demo_approved": bool(r[5]),
-            "demo_created": bool(r[6]),
+            "source_title": r[0],
+            "source_link": r[1],
+            "source": r[2],
+            "key_idea": r[3],
+            "tags": json.loads(r[4]) if r[4] else [],
+            "novelty_label": r[5],
+            "demo_approved": bool(r[6]),
+            "demo_created": bool(r[7]),
         }
         for r in rows
     ]
@@ -55,19 +97,20 @@ def store_weekly_ideas(ideas: list[Idea]) -> None:
         for idea in ideas:
             # Skip if already stored for this week
             exists = conn.execute(
-                "SELECT 1 FROM ideas WHERE paper_title = ? AND week = ?",
-                (idea.paper_title, week),
+                "SELECT 1 FROM ideas WHERE source_title = ? AND week = ?",
+                (idea.source_title, week),
             ).fetchone()
             if not exists:
                 conn.execute(
                     """
-                    INSERT INTO ideas (week, paper_title, paper_link, key_idea, tags, novelty_label, demo_approved, demo_created, created_at)
-                    VALUES (?, ?, ?, ?, ?, ?, 0, 0, ?)
+                    INSERT INTO ideas (week, source_title, source_link, source, key_idea, tags, novelty_label, demo_approved, demo_created, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, ?)
                     """,
                     (
                         week,
-                        idea.paper_title,
-                        idea.paper_link,
+                        idea.source_title,
+                        idea.source_link,
+                        idea.source,
                         idea.key_idea,
                         json.dumps(idea.tags),
                         idea.novelty_label,
@@ -77,13 +120,13 @@ def store_weekly_ideas(ideas: list[Idea]) -> None:
         conn.commit()
 
 
-def mark_demo_approved(paper_titles: list[str]) -> None:
-    """Set demo_approved=1 for the given paper titles in the current week."""
+def mark_demo_approved(source_titles: list[str]) -> None:
+    """Set demo_approved=1 for the given source titles in the current week."""
     week = current_week_label()
     with _connect() as conn:
-        for title in paper_titles:
+        for title in source_titles:
             conn.execute(
-                "UPDATE ideas SET demo_approved = 1 WHERE paper_title = ? AND week = ?",
+                "UPDATE ideas SET demo_approved = 1 WHERE source_title = ? AND week = ?",
                 (title, week),
             )
         conn.commit()
@@ -128,6 +171,13 @@ def _word_set(text: str) -> set[str]:
         "method", "based", "using", "learning", "network",
     }
     return {w for w in words if w not in stopwords and len(w) > 2}
+
+
+def _week_label_n_weeks_ago(n: int) -> str:
+    """Return the week label for N weeks ago, for SQL filtering."""
+    from datetime import timedelta
+    target = datetime.now(timezone.utc) - timedelta(weeks=n)
+    return f"{target.year}-{target.strftime('%b')}-W{target.isocalendar().week:02d}"
 
 
 def _connect() -> sqlite3.Connection:

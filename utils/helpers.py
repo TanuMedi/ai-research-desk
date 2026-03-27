@@ -21,13 +21,25 @@ def generate_newsletter(
     week = current_week_label()
     lines = [f"# Weekly AI Research Digest — {week}", ""]
 
-    # Top Papers
-    lines.append("## Top Papers")
-    lines.append("")
-    for idea in all_ideas[:config.REPORT_TOP_PAPERS_COUNT]:
-        lines.append(f"- **[{idea.paper_title}]({idea.paper_link})**")
-        lines.append(f"  {idea.key_idea}")
+    # Top ideas by source
+    arxiv_ideas = [i for i in all_ideas if i.source == "arxiv"]
+    github_ideas = [i for i in all_ideas if i.source == "github"]
+
+    if arxiv_ideas:
+        lines.append("## Top Papers")
         lines.append("")
+        for idea in arxiv_ideas[:config.REPORT_TOP_IDEAS_COUNT]:
+            lines.append(f"- **[{idea.source_title}]({idea.source_link})**")
+            lines.append(f"  {idea.key_idea}")
+            lines.append("")
+
+    if github_ideas:
+        lines.append("## Top Repos")
+        lines.append("")
+        for idea in github_ideas[:config.REPORT_TOP_IDEAS_COUNT]:
+            lines.append(f"- **[{idea.source_title}]({idea.source_link})**")
+            lines.append(f"  {idea.key_idea}")
+            lines.append("")
 
     # Key Trends (tags frequency)
     lines.append("## Key Trends")
@@ -38,14 +50,14 @@ def generate_newsletter(
             tag_counts[tag] = tag_counts.get(tag, 0) + 1
     top_tags = sorted(tag_counts.items(), key=lambda x: x[1], reverse=True)[:8]
     for tag, count in top_tags:
-        lines.append(f"- **{tag}** ({count} papers)")
+        lines.append(f"- **{tag}** ({count} ideas)")
     lines.append("")
 
     # Selected Ideas for Demo
     lines.append("## Selected Ideas for Demo")
     lines.append("")
     for i, idea in enumerate(top2, 1):
-        lines.append(f"### Idea {i}: {idea.paper_title}")
+        lines.append(f"### Idea {i}: {idea.source_title}")
         lines.append("")
         lines.append(f"**Key Idea:** {idea.key_idea}")
         lines.append("")
@@ -55,9 +67,10 @@ def generate_newsletter(
         lines.append("")
         lines.append(f"**Tags:** {', '.join(idea.tags)}")
         lines.append("")
-        lines.append(f"**Source:** [{idea.paper_title}]({idea.paper_link})")
+        source_label = "arXiv" if idea.source == "arxiv" else "GitHub"
+        lines.append(f"**Source:** [{idea.source_title}]({idea.source_link}) ({source_label})")
         lines.append("")
-        lines.append(f"> {idea.paper_summary[:300].rstrip()}...")
+        lines.append(f"> {idea.source_summary[:300].rstrip()}...")
         lines.append("")
 
     # Proposed Demos
