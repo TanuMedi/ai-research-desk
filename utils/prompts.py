@@ -59,14 +59,18 @@ Past ideas from memory (for novelty comparison):
 Generate an ordered plan of actions to achieve the goal from the current state.
 
 Guidelines:
+- NEVER call a search tool (github_search or arxiv_search) if ideas already exist in state (ideas_count >= 3)
+- Avoid redundant tool calls — do not re-search a source that already produced results in state
+- Each step must use a valid action name from the available tools or skills listed above
+- Do NOT include "critic" or "STOP" as plan steps — those are handled automatically
+- If ideas already exist in state, proceed directly to scoring and proposal generation
+- If no ideas exist, begin with GitHub search
+- Only use arXiv if GitHub yields fewer than 3 ideas or quality signals show low novelty
 - Search for general AI ideas first — do not filter by domain during data gathering
 - Domain relevance (e.g. financial services) is assessed separately during scoring
-- Search GitHub first for real implementations and applied techniques
-- Only search arXiv as a follow-up if GitHub yields fewer than 3 ideas or quality signals show low novelty
-- Avoid redundant tool calls — do not re-search a source that already produced results in state
-- Include scoring after ideas are gathered, then proposal generation
-- Do NOT include "critic" or "STOP" as plan steps — those are handled automatically
-- Each step must use a valid action name from the available tools or skills listed above
+- Prefer GitHub for real implementations and applied techniques
+- After ideas are gathered, include a scoring step
+- After scoring, include proposal generation
 
 Return ONLY valid JSON (no markdown, no backticks):
 {{
