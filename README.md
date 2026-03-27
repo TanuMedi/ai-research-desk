@@ -27,7 +27,7 @@ The agent runs an iterative planner–executor–critic loop (up to `MAX_CYCLES`
 
 After the loop, evaluation runs (LLM-as-judge + tool efficiency metrics) and a newsletter is generated.
 
-### Tools vs Skills vs Sub-agents
+### Components
 
 | Type | What it does | Examples |
 |------|-------------|----------|
