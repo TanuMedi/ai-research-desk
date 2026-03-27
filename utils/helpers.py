@@ -28,7 +28,7 @@ def generate_newsletter(
     if arxiv_ideas:
         lines.append("## Top Papers")
         lines.append("")
-        for idea in arxiv_ideas[:config.REPORT_TOP_PAPERS_COUNT]:
+        for idea in arxiv_ideas[:config.REPORT_TOP_IDEAS_COUNT]:
             lines.append(f"- **[{idea.source_title}]({idea.source_link})**")
             lines.append(f"  {idea.key_idea}")
             lines.append("")
@@ -36,7 +36,7 @@ def generate_newsletter(
     if github_ideas:
         lines.append("## Top Repos")
         lines.append("")
-        for idea in github_ideas[:config.REPORT_TOP_PAPERS_COUNT]:
+        for idea in github_ideas[:config.REPORT_TOP_IDEAS_COUNT]:
             lines.append(f"- **[{idea.source_title}]({idea.source_link})**")
             lines.append(f"  {idea.key_idea}")
             lines.append("")

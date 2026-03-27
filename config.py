@@ -53,7 +53,7 @@ MEMORY_WEEKS_LIMIT = 4  # only load ideas from the last N weeks to keep context 
 NOVELTY_THRESHOLD = 0.30  # Jaccard similarity cutoff; above this → "incremental"
 
 # Reporting
-REPORT_TOP_PAPERS_COUNT = 8  # how many top papers to feature in the newsletter
+REPORT_TOP_IDEAS_COUNT = 8  # how many top ideas per source to feature in the newsletter
 
 # Agent loop
 MAX_CYCLES = 2 # max plan→execute→critique cycles before stopping
