@@ -6,6 +6,7 @@ from rich.panel import Panel
 from rich.markdown import Markdown
 from rich.table import Table
 
+import config
 from agents.agent_loop import run_agent
 from evaluation.evaluator import evaluate_run
 from tools.memory_tool import init_db
@@ -80,7 +81,9 @@ async def main() -> None:
     # --- Initialize ---
     init_db()
     try:
-        llm = LLMClient()
+        llm_fixed = LLMClient(temperature=config.LLM_TEMP_FIXED)   # critic, evaluation, summarizer
+        llm_low = LLMClient(temperature=config.LLM_TEMP_LOW)       # planner
+        llm_high = LLMClient(temperature=config.LLM_TEMP_HIGH)     # proposal generation
     except ValueError as e:
         console.print(f"[red]✗ LLM configuration error: {e}[/red]")
         sys.exit(1)
@@ -94,7 +97,7 @@ async def main() -> None:
         border_style="cyan",
     ))
 
-    state = await run_agent(DEFAULT_GOAL, llm, registry)
+    state = await run_agent(DEFAULT_GOAL, llm_fixed, llm_low, llm_high, registry)
 
     # --- Results ---
     ideas = state.get("ideas", [])
@@ -121,7 +124,7 @@ async def main() -> None:
 
     # --- Evaluation ---
     console.print("\n[bold cyan]→ Running evaluation...[/bold cyan]")
-    evaluation = await evaluate_run(state, llm)
+    evaluation = await evaluate_run(state, llm_fixed)
     state["evaluation"] = evaluation
     print_eval_table(evaluation)
 

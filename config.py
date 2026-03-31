@@ -45,6 +45,9 @@ LLM_PROVIDER = os.getenv("LLM_PROVIDER", "openai")  # "claude" | "openai"
 CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", "claude-sonnet-4-6")
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o")
 LLM_MAX_TOKENS = 4096
+LLM_TEMP_FIXED = 0.0      # critic, evaluation, summarizer
+LLM_TEMP_LOW = 0.2        # planner
+LLM_TEMP_HIGH = 0.7       # proposal generation
 
 # Memory
 MEMORY_WEEKS_LIMIT = 4  # only load ideas from the last N weeks to keep context manageable

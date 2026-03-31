@@ -9,7 +9,7 @@ from utils.prompts import GENERATE_PROPOSAL_PROMPT
 
 async def run(state: dict[str, Any], idea_indices: list[int] | None = None) -> dict[str, Any]:
     """Generate proposals for selected ideas."""
-    llm: LLMClient = state.get("_llm")
+    llm: LLMClient = state.get("_llm_high")
     selected = state.get("selected_ideas", [])
     indices = idea_indices or []
 

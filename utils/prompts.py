@@ -90,7 +90,7 @@ PROPOSALS:
 {proposals_json}
 
 SCORES:
-{scores_json}
+{scores_json} 
 
 Evaluate each proposal on:
 1. Specificity — is the demo scope concrete and actionable?

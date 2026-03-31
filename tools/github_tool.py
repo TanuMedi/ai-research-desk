@@ -37,7 +37,7 @@ async def run(tool_input: dict[str, Any], state: dict[str, Any]) -> dict[str, An
     repos = await search_repos(query, max_results)
 
     # Summarize repos into Ideas via LLM
-    llm: LLMClient = state.get("_llm")
+    llm: LLMClient = state.get("_llm_fixed")
     ideas = []
     if llm and repos:
         ideas = await summarize_repos_batch(repos, llm)

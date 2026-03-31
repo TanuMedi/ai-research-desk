@@ -11,7 +11,7 @@ from utils.prompts import CRITIC_PROMPT
 
 
 async def run_critic_agent(state: dict[str, Any]) -> dict[str, Any]:
-    llm: LLMClient = state.get("_llm")
+    llm: LLMClient = state.get("_llm_fixed")
     proposals = state.get("proposals", [])
     scored_ideas = state.get("scored_ideas", [])
 

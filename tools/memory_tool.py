@@ -17,7 +17,7 @@ TOOL_SCHEMA = {
         "action": {
             "type": "string",
             "enum": ["load", "store"],
-            "description": "'load' to fetch past ideas, 'store' to persist current ideas.",
+            "description": "'load' to fetch past ideas, 'store' to persist selected ideas.",
         },
     },
     "use_when": "You need to check idea novelty against past runs or save this week's ideas.",
@@ -29,10 +29,10 @@ async def run(tool_input: dict[str, Any], state: dict[str, Any]) -> dict[str, An
     """MCP-style entry point."""
     action = tool_input.get("action", "load")
     if action == "store":
-        ideas = state.get("ideas", [])
-        if ideas:
-            store_weekly_ideas(ideas)
-        return {"stored_count": len(ideas)}
+        selected_ideas = state.get("selected_ideas", [])
+        if selected_ideas:
+            store_weekly_ideas(selected_ideas)
+        return {"stored_count": len(selected_ideas)}
     else:
         weeks_limit = tool_input.get("weeks_limit", config.MEMORY_WEEKS_LIMIT)
         past = get_past_ideas(weeks_limit=weeks_limit)
@@ -130,6 +130,15 @@ def mark_demo_approved(source_titles: list[str]) -> None:
                 (title, week),
             )
         conn.commit()
+
+
+def clear_ideas() -> int:
+    """Delete all rows from the ideas table. Returns remaining row count (should be 0)."""
+    with _connect() as conn:
+        conn.execute("DELETE FROM ideas")
+        conn.commit()
+        count = conn.execute("SELECT COUNT(*) FROM ideas").fetchone()[0]
+    return count
 
 
 def classify_novelty(new_idea: Idea, past_ideas: list[dict]) -> tuple[float, str]:
