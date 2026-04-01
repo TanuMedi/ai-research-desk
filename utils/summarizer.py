@@ -5,14 +5,14 @@ from models.idea import Idea
 from models.paper import Paper
 from models.repo import Repo
 from utils.llm_client import LLMClient, parse_llm_json
-from utils.prompts import SUMMARIZE_PAPER_PROMPT
+from utils.prompts import IDEA_PROPOSAL_PROMPT
 
 
 async def summarize_source(
     title: str, summary: str, link: str, source: str, llm: LLMClient,
 ) -> Idea | None:
     """Summarize a single source (paper or repo) via LLM. Returns None if parsing fails."""
-    prompt = SUMMARIZE_PAPER_PROMPT.format(title=title, abstract=summary)
+    prompt = IDEA_PROPOSAL_PROMPT.format(title=title, abstract=summary)
 
     for attempt in range(2):
         try:

@@ -1,100 +1,86 @@
-# Weekly AI Research Digest — 2026-Mar-W13
+# Weekly AI Research Digest — 2026-Mar-W14
 
 ## Top Repos
 
-- **[Siddhant-Goswami/100x-LLM](https://github.com/Siddhant-Goswami/100x-LLM)**
-  A comprehensive resource for implementing large language model and agentic applications with practical examples.
-
 - **[facebookresearch/Pearl](https://github.com/facebookresearch/Pearl)**
-  A production-ready library for reinforcement learning AI agents developed by Meta's Applied Reinforcement Learning team.
-
-- **[panaverse/learn-generative-ai](https://github.com/panaverse/learn-generative-ai)**
-  Learn how to apply generative AI technologies in cloud environments using various tools and platforms.
-
-- **[ilsilfverskiold/Awesome-LLM-Resources-List](https://github.com/ilsilfverskiold/Awesome-LLM-Resources-List)**
-  A curated collection of resources for applied AI engineering, focusing on serverless hosting of private and open-source LLM models.
-
-- **[PyPatel/Machine-Learning-and-AI-in-Trading](https://github.com/PyPatel/Machine-Learning-and-AI-in-Trading)**
-  The repository applies machine learning and AI algorithms, particularly LSTMs, to predict stock prices for enhanced trading performance.
-
-- **[OneRedOak/claude-code-workflows](https://github.com/OneRedOak/claude-code-workflows)**
-  Automated workflows for code, security, and design reviews using Claude Code, inspired by Anthropic's AI development processes.
-
-- **[adithya-s-k/AI-Engineering.academy](https://github.com/adithya-s-k/AI-Engineering.academy)**
-  AI Engineering Academy provides structured learning paths to simplify and teach complex AI concepts.
+  Pearl provides a scalable and production-ready library for deploying reinforcement learning agents.
 
 - **[meta-pytorch/applied-ai](https://github.com/meta-pytorch/applied-ai)**
-  The repository showcases applied AI experiments and examples utilizing PyTorch, focusing on performance optimization through specialized Triton and CUDA kernels.
+  The repository provides practical experiments and examples for applying AI techniques using PyTorch.
+
+- **[adithya-s-k/AI-Engineering.academy](https://github.com/adithya-s-k/AI-Engineering.academy)**
+  The repository focuses on teaching applied AI concepts through practical examples and projects.
+
+- **[GoogleCloudPlatform/applied-ai-engineering-samples](https://github.com/GoogleCloudPlatform/applied-ai-engineering-samples)**
+  The repository provides practical examples of using Generative AI on Google Cloud's Vertex AI platform.
+
+- **[panaverse/learn-generative-ai](https://github.com/panaverse/learn-generative-ai)**
+  The repository provides a comprehensive guide to applying generative AI in cloud environments using various modern technologies.
+
+- **[Siddhant-Goswami/100x-LLM](https://github.com/Siddhant-Goswami/100x-LLM)**
+  The repository provides practical code examples and snippets from the 100x Applied AI cohort lectures to demonstrate the application of large language models.
+
+- **[PyPatel/Machine-Learning-and-AI-in-Trading](https://github.com/PyPatel/Machine-Learning-and-AI-in-Trading)**
+  The repository explores the application of machine learning and AI algorithms to enhance trading performance and reduce standard deviation.
+
+- **[dessa-oss/atlas](https://github.com/dessa-oss/atlas)**
+  Atlas is a self-hosted platform designed to facilitate the development and deployment of deep learning models.
 
 ## Key Trends
 
+- **risk-management** (5 ideas)
+- **fraud-detection** (4 ideas)
 - **customer-service** (3 ideas)
-- **compliance-automation** (2 ideas)
+- **document-processing** (3 ideas)
+- **LLM** (3 ideas)
+- **reinforcement-learning** (2 ideas)
 - **trading-systems** (2 ideas)
-- **risk-management** (2 ideas)
-- **generative-ai** (2 ideas)
-- **LLM applications** (1 ideas)
-- **AI agents** (1 ideas)
-- **prompt-engineering** (1 ideas)
+- **compliance-automation** (2 ideas)
 
 ## Selected Ideas for Demo
 
-### Idea 1: Siddhant-Goswami/100x-LLM
+### Idea 1: facebookresearch/Pearl
 
-**Key Idea:** A comprehensive resource for implementing large language model and agentic applications with practical examples.
+**Key Idea:** Pearl provides a scalable and production-ready library for deploying reinforcement learning agents.
 
-**Methods:** Techniques include full-stack AI applications, prompt engineering, tool calling, RAG, LLM workflows, and AI agents.
+**Methods:** The library utilizes advanced reinforcement learning algorithms and efficient training techniques to optimize agent performance.
 
-**Novelty:** Novel (similarity score: 1.00)
+**Novelty Score:** 1.00
 
-**Tags:** LLM applications, AI agents, prompt-engineering, compliance-automation, customer-service
-
-**Source:** [Siddhant-Goswami/100x-LLM](https://github.com/Siddhant-Goswami/100x-LLM) (GitHub)
-
-> Code snippets and examples from the 100x Applied AI cohort lectures.
-
-# 100x Applied AI - Complete Learning Guide
-
-Welcome to the 100x Applied AI repository! This is a comprehensive resource for learning and implementing  Large Language Model (LLM) & Agentic applications. Whether you're a complete b...
-
-### Idea 2: facebookresearch/Pearl
-
-**Key Idea:** A production-ready library for reinforcement learning AI agents developed by Meta's Applied Reinforcement Learning team.
-
-**Methods:** The library uses advanced reinforcement learning techniques to develop AI agents that are ready for production environments.
-
-**Novelty:** Novel (similarity score: 1.00)
-
-**Tags:** reinforcement-learning, AI-agents, trading-systems, risk-management
+**Tags:** reinforcement-learning, trading-systems, risk-management, fraud-detection
 
 **Source:** [facebookresearch/Pearl](https://github.com/facebookresearch/Pearl) (GitHub)
 
-> A Production-ready Reinforcement Learning AI Agent Library brought by the Applied Reinforcement Learning team at Meta. 
+> A Production-ready Reinforcement Learning AI Agent Library brought by the Applied Reinforcement Learning team at Meta....
 
-![alt](./logo/pearl_long.png)
-# Pearl - A Production-ready Reinforcement Learning AI Agent Library
-### Proudly brought by Applied Reinforcement Learning @ Meta
+### Idea 2: meta-pytorch/applied-ai
 
-- v0.1 - Pearl bet...
+**Key Idea:** The repository provides practical experiments and examples for applying AI techniques using PyTorch.
+
+**Methods:** The main methods involve implementing and experimenting with various AI models and techniques using the PyTorch framework.
+
+**Novelty Score:** 1.00
+
+**Tags:** PyTorch, AI-experiments, trading-systems, risk-management, fraud-detection
+
+**Source:** [meta-pytorch/applied-ai](https://github.com/meta-pytorch/applied-ai) (GitHub)
+
+> Applied AI experiments and examples for PyTorch...
 
 ## Proposed Demos
 
-### Demo 1: 100x LLM-Based Financial Applications
+### Demo 1: Scalable Reinforcement Learning for Financial Risk Management
 
-**Why it matters:** Implementing large language model applications offers transformative benefits such as automating compliance processes and enhancing customer service interactions. This can lead to significant cost savings and reduced operational risk by ensuring real-time compliance checks and faster issue resolution.
+**Why it matters:** Leveraging Pearl's capabilities can significantly enhance the efficiency of trading systems and risk management by optimizing decision-making processes through advanced reinforcement learning techniques. This can lead to substantial cost savings, improved risk mitigation, and adherence to regulatory compliance by automating complex decision frameworks in real-time.
 
-**Novelty:** This proposal leverages state-of-the-art techniques like RAG and prompt engineering to advance beyond traditional models, offering better accuracy and efficiency in LLM applications for financial services.
+**Demo scope:** The MVP demo will involve deploying reinforcement learning agents using Pearl to optimize a trading strategy based on historical market data and real-time feeds. The agents will be tasked with identifying and mitigating potential risks in trading operations, showcasing improved decision-making efficiency and reduced risk exposure in a simulated trading environment.
 
-**Demo scope:** Develop a prototype that automates regulatory compliance checks using an LLM. The demo will process sample regulatory filings and market data to ensure automated compliance and respond to customer inquiries accurately. The emphasis will be on demonstrating real-time processing capabilities and precise compliance automation.
+**Data requirements:** The demo will require access to historical and real-time market data APIs, such as stock price feeds and trading volumes, along with sample transaction datasets. Compliance with financial data privacy regulations, such as GDPR or CCPA, must be ensured when handling sensitive information.
 
-**Data requirements:** Access to compliant market data APIs, synthetic versions of regulatory filings, and test transaction datasets. It must ensure compliance with data privacy regulations like GDPR and adhere to stringent data security protocols typical in financial services.
+### Demo 2: AI Experiments with PyTorch for Financial Services
 
-### Demo 2: Integration of Pearl for Enhanced Trading Systems
+**Why it matters:** Integrating AI models into financial operations can lead to significant cost savings through automated trading systems, reduced risk via enhanced fraud detection, and improved regulatory compliance with AI-driven risk management. These advancements can streamline operations, enhance accuracy, and ensure faster decision-making processes.
 
-**Why it matters:** Integrating Pearl into trading systems could revolutionize algorithmic trading by optimizing decision-making processes, directly resulting in significant cost savings and improved risk management. This can lead to faster processing of transactions and enhanced operational efficiency, while ensuring robust compliance with financial regulations.
+**Demo scope:** A prototype demo could involve developing a PyTorch-based AI model to detect fraudulent transactions using synthetic transaction data and historical market data. The model could also be extended to optimize trading strategies or manage risk by simulating various market conditions over a selected period, showcasing the potential for operational efficiency and risk mitigation.
 
-**Novelty:** Pearl stands out due to its advanced reinforcement learning methods which enable AI agents to adapt rapidly to dynamic financial markets, unlike traditional algorithms. This adaptability can provide a competitive edge by responding effectively to market volatility.
-
-**Demo scope:** Develop a prototype that uses Pearl's reinforcement learning agents to optimize trades in a simulated trading environment. The MVP would focus on a specific asset class like equities, leveraging real-time market data APIs to simulate trading strategies and evaluate their effectiveness under varying market conditions.
-
-**Data requirements:** The demo requires access to historical and real-time market data, potentially sourced from financial market data API providers like Bloomberg or Alpha Vantage. Ensuring data privacy and compliance with financial regulations such as GDPR and PCI DSS is crucial when handling any customer-specific transaction data.
+**Data requirements:** The demo will require access to historical transaction datasets, market data APIs, and possibly synthetic datasets to simulate trading and fraud detection scenarios. Ensuring compliance with data privacy regulations such as GDPR or CCPA will be crucial, especially when handling any real client data or sensitive financial information.

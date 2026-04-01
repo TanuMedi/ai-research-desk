@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 import json
 import sqlite3
 from datetime import datetime, timezone
 from typing import Any
 
 import config
-from models.idea import Idea
 from utils.helpers import current_week_label
 
 # ---------------------------------------------------------------------------
@@ -113,7 +114,7 @@ def store_weekly_ideas(ideas: list[Idea]) -> None:
                         idea.source,
                         idea.key_idea,
                         json.dumps(idea.tags),
-                        idea.novelty_label,
+                        "",
                         now,
                     ),
                 )
@@ -139,47 +140,6 @@ def clear_ideas() -> int:
         conn.commit()
         count = conn.execute("SELECT COUNT(*) FROM ideas").fetchone()[0]
     return count
-
-
-def classify_novelty(new_idea: Idea, past_ideas: list[dict]) -> tuple[float, str]:
-    """
-    Compare new_idea against past ideas using Jaccard similarity on word sets.
-    Returns (max_similarity_score, "novel" | "incremental").
-    """
-    if not past_ideas:
-        return 0.0, "novel"
-
-    new_words = _word_set(new_idea.key_idea)
-    if not new_words:
-        return None
-
-    max_sim = 0.0
-    for past in past_ideas:
-        past_words = _word_set(past.get("key_idea", ""))
-        if not past_words:
-            continue
-        intersection = len(new_words & past_words)
-        union = len(new_words | past_words)
-        sim = intersection / union if union else 0.0
-        max_sim = max(max_sim, sim)
-
-    label = "incremental" if max_sim >= config.NOVELTY_THRESHOLD else "novel"
-    return max_sim, label
-
-
-def _word_set(text: str) -> set[str]:
-    """Lowercase word set, stripping punctuation."""
-    import re
-    words = re.findall(r"[a-z]+", text.lower())
-    # Remove common stopwords
-    stopwords = {
-        "a", "an", "the", "and", "or", "of", "in", "to", "is", "for", "with",
-        "on", "that", "this", "we", "our", "by",
-        # High-frequency domain terms that cause false similarity
-        "financial", "market", "model", "data", "system", "approach",
-        "method", "based", "using", "learning", "network",
-    }
-    return {w for w in words if w not in stopwords and len(w) > 2}
 
 
 def _week_label_n_weeks_ago(n: int) -> str:

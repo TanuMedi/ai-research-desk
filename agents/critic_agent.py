@@ -57,7 +57,7 @@ async def evaluate_proposals(
                 "title": getattr(i, "source_title", ""),
                 "final_score": getattr(i, "final_score", 0),
                 "novelty": getattr(i, "novelty_score", 0),
-                "leverage": getattr(i, "leverage_score", 0),
+                "repo_readiness": getattr(i, "repo_readiness_score", 0),
             }
             for i in scored_ideas[:len(proposals)]
         ],

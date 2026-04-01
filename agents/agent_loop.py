@@ -72,7 +72,7 @@ async def run_agent(
         if state["plan"]["status"] != NEEDS_REPLAN:
             break
     # stores selected ideas to memory DB for future runs to assess novelty; also ensures persistence even if the system is stopped after completion
-    await call_tool(registry, "memory", {"action": "store"}, state)
+    # await call_tool(registry, "memory", {"action": "store"}, state)
 
     total_time_ms = int((time.perf_counter() - agent_start) * 1000)
     console.print(f"\n[bold green]✓ Agent finished in {total_time_ms}ms[/bold green]")

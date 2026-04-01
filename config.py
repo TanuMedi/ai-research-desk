@@ -55,6 +55,14 @@ MEMORY_WEEKS_LIMIT = 4  # only load ideas from the last N weeks to keep context 
 # Novelty detection
 NOVELTY_THRESHOLD = 0.30  # Jaccard similarity cutoff; above this → "incremental"
 
+# Embeddings
+EMBEDDING_MODEL = "text-embedding-3-small"
+
+# Scoring weights (must sum to 1.0)
+WEIGHT_NOVELTY = float(os.getenv("WEIGHT_NOVELTY", "0.40"))
+WEIGHT_RELEVANCE = float(os.getenv("WEIGHT_RELEVANCE", "0.30"))
+WEIGHT_REPO_READINESS = float(os.getenv("WEIGHT_REPO_READINESS", "0.30"))
+
 # Reporting
 REPORT_TOP_IDEAS_COUNT = 8  # how many top ideas per source to feature in the newsletter
 

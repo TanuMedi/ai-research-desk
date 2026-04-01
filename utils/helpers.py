@@ -1,10 +1,21 @@
 import json
+import math
 import os
 from datetime import datetime, timezone
 
 import config
 from models.idea import Idea
 from models.proposal import Proposal
+
+
+def cosine_similarity(a: list[float], b: list[float]) -> float:
+    """Compute cosine similarity between two vectors."""
+    dot = sum(x * y for x, y in zip(a, b))
+    norm_a = math.sqrt(sum(x * x for x in a))
+    norm_b = math.sqrt(sum(x * x for x in b))
+    if norm_a == 0 or norm_b == 0:
+        return 0.0
+    return dot / (norm_a * norm_b)
 
 
 def current_week_label() -> str:
@@ -63,7 +74,7 @@ def generate_newsletter(
         lines.append("")
         lines.append(f"**Methods:** {idea.methods}")
         lines.append("")
-        lines.append(f"**Novelty:** {idea.novelty_label.capitalize()} (similarity score: {idea.novelty_score:.2f})")
+        lines.append(f"**Novelty Score:** {idea.novelty_score:.2f}")
         lines.append("")
         lines.append(f"**Tags:** {', '.join(idea.tags)}")
         lines.append("")
@@ -80,8 +91,6 @@ def generate_newsletter(
         lines.append(f"### Demo {i}: {proposal.idea_title}")
         lines.append("")
         lines.append(f"**Why it matters:** {proposal.why_it_matters}")
-        lines.append("")
-        lines.append(f"**Novelty:** {proposal.novelty}")
         lines.append("")
         lines.append(f"**Demo scope:** {proposal.demo_scope}")
         lines.append("")

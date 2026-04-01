@@ -9,6 +9,7 @@ class LLMClient:
     def __init__(self, temperature: float = 0.0) -> None:
         self.provider = config.LLM_PROVIDER.lower()
         self.temperature = temperature
+        self._embed_client = None  # lazy-init for embeddings
         if self.provider == "claude":
             import anthropic
             self._client = anthropic.AsyncAnthropic()
@@ -41,6 +42,19 @@ class LLMClient:
                 temperature=self.temperature,
             )
             return response.choices[0].message.content
+
+    async def embed(self, texts: list[str]) -> list[list[float]]:
+        """Embed a batch of texts using OpenAI (always, regardless of LLM_PROVIDER)."""
+        if not texts:
+            return []
+        if self._embed_client is None:
+            import openai
+            self._embed_client = openai.AsyncOpenAI()
+        response = await self._embed_client.embeddings.create(
+            model=config.EMBEDDING_MODEL,
+            input=texts,
+        )
+        return [item.embedding for item in response.data]
 
 
 def parse_llm_json(text: str) -> dict:

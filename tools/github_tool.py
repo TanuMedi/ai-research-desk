@@ -1,9 +1,10 @@
-"""GitHub tool — search repos, extract metadata, compute leverage score."""
+"""GitHub tool — search repos and extract metadata."""
 
 from __future__ import annotations
 
 import base64
 import os
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import httpx
@@ -101,37 +102,9 @@ async def search_repos(query: str, max_results: int = 10) -> list[Repo]:
                 readme=readme,
                 files=files,
             )
-            repo.leverage_score = compute_leverage(repo)
             results.append(repo)
 
         return results
-
-
-def compute_leverage(repo: Repo | dict[str, Any]) -> float:
-    """Compute a 0-1 leverage score based on repo characteristics.
-
-    Accepts a Repo model or a plain dict (e.g. from state["repo_results"]).
-    """
-    score = 0.0
-    if isinstance(repo, dict):
-        readme = repo.get("readme", "").lower()
-        files = repo.get("files", [])
-        stars = repo.get("stars", 0)
-    else:
-        readme = repo.readme.lower()
-        files = repo.files
-        stars = repo.stars
-
-    if "streamlit" in readme:
-        score += 0.4
-    if "fastapi" in readme:
-        score += 0.3
-    if "requirements.txt" in files:
-        score += 0.2
-    if stars > 500:
-        score += 0.1
-
-    return min(score, 1.0)
 
 
 def _auth_headers() -> dict[str, str]:

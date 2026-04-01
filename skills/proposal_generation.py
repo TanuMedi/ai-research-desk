@@ -34,7 +34,6 @@ async def generate_proposal(idea: Idea, llm: LLMClient) -> Proposal:
         key_idea=idea.key_idea,
         methods=idea.methods,
         tags=", ".join(idea.tags),
-        novelty_label=idea.novelty_label,
     )
 
     for attempt in range(2):
@@ -47,7 +46,6 @@ async def generate_proposal(idea: Idea, llm: LLMClient) -> Proposal:
             return Proposal(
                 idea_title=parsed.get("idea_title", idea.source_title),
                 why_it_matters=parsed.get("why_it_matters", ""),
-                novelty=parsed.get("novelty", ""),
                 demo_scope=parsed.get("demo_scope", ""),
                 data_requirements=parsed.get("data_requirements", ""),
             )
@@ -57,14 +55,12 @@ async def generate_proposal(idea: Idea, llm: LLMClient) -> Proposal:
                 return Proposal(
                     idea_title=idea.source_title,
                     why_it_matters=idea.key_idea,
-                    novelty=idea.novelty_label,
                     demo_scope="To be defined.",
                     data_requirements="To be defined.",
                 )
     return Proposal(
         idea_title=idea.source_title,
         why_it_matters=idea.key_idea,
-        novelty=idea.novelty_label,
         demo_scope="To be defined.",
         data_requirements="To be defined.",
     )

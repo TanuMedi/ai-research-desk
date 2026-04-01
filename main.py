@@ -31,9 +31,8 @@ def print_scores_table(scored_ideas: list) -> None:
     table.add_column("Title", max_width=40)
     table.add_column("Final", justify="right")
     table.add_column("Novelty", justify="right")
-    table.add_column("Leverage", justify="right")
     table.add_column("Relevance", justify="right")
-    table.add_column("Feasibility", justify="right")
+    table.add_column("Repo Ready", justify="right")
 
     for i, idea in enumerate(scored_ideas[:8], 1):
         table.add_row(
@@ -41,9 +40,8 @@ def print_scores_table(scored_ideas: list) -> None:
             getattr(idea, "source_title", "")[:40],
             f"{getattr(idea, 'final_score', 0):.2f}",
             f"{getattr(idea, 'novelty_score', 0):.2f}",
-            f"{getattr(idea, 'leverage_score', 0):.2f}",
             f"{getattr(idea, 'relevance_score', 0):.2f}",
-            f"{getattr(idea, 'feasibility_score', 0):.2f}",
+            f"{getattr(idea, 'repo_readiness_score', 0):.2f}",
         )
 
     console.print()
