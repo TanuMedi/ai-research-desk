@@ -19,7 +19,7 @@ from utils.summarizer import summarize_repos_batch
 # ---------------------------------------------------------------------------
 TOOL_SCHEMA = {
     "name": "github_search",
-    "description": "Search GitHub repositories for applied AI implementations. Extracts README, file list, stars, and computes a leverage score.",
+    "description": "Search GitHub for trending AI repositories created in the last 7 days. Extracts README, file list, and stars.",
     "input_schema": {
         "query": {"type": "string", "description": "GitHub search query (e.g. 'fintech llm agent')"},
         "max_results": {"type": "integer", "description": "Max repos to return (default: 10)"},
@@ -51,12 +51,20 @@ async def run(tool_input: dict[str, Any], state: dict[str, Any]) -> dict[str, An
 
 
 async def search_repos(query: str, max_results: int = 10) -> list[Repo]:
-    """Search GitHub and return enriched repo metadata."""
+    """Search GitHub for trending AI repos created in the last DAYS_LOOKBACK days."""
     headers = _auth_headers()
+
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=config.DAYS_LOOKBACK)).strftime("%Y-%m-%d")
+    ai_topics = " ".join([
+        "topic:llm", "topic:ai", "topic:machine-learning",
+        "topic:deep-learning", "topic:generative-ai", "topic:nlp",
+    ])
+    trending_query = f"{query} {ai_topics} created:>{cutoff}"
+
     async with httpx.AsyncClient(timeout=30) as client:
         resp = await client.get(
             f"{_GITHUB_API}/search/repositories",
-            params={"q": query, "sort": "stars", "order": "desc", "per_page": max_results},
+            params={"q": trending_query, "sort": "stars", "order": "desc", "per_page": max_results},
             headers=headers,
         )
         resp.raise_for_status()
