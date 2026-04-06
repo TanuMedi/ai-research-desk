@@ -29,7 +29,9 @@ console = Console()
 
 async def run_agent(
     goal: str,
-    llm: LLMClient,
+    llm_fixed: LLMClient,
+    llm_low: LLMClient,
+    llm_high: LLMClient,
     registry: ToolRegistry,
 ) -> dict[str, Any]:
     """Run the agent through plan → execute → critique cycles.
@@ -53,7 +55,9 @@ async def run_agent(
     Demos are generated separately in main.py after user approval.
     """
     state = create_initial_state(goal)
-    state["_llm"] = llm
+    state["_llm_low"] = llm_low          # planner (temp=0.2)
+    state["_llm_fixed"] = llm_fixed  # critic, summarizer (temp=0.0)
+    state["_llm_high"] = llm_high    # proposal generation (temp=0.7)
 
     # await _load_past_ideas(registry, state)
 
@@ -61,18 +65,21 @@ async def run_agent(
 
     for cycle in range(1, config.MAX_CYCLES + 1):
         console.print(f"\n[bold magenta]━━━ Cycle {cycle}/{config.MAX_CYCLES} ━━━[/bold magenta]")
-        cycle_timing = await _run_cycle(cycle, goal, state, registry, llm)
+        cycle_timing = await _run_cycle(cycle, goal, state, registry)
         state["timing"]["cycles"].append(cycle_timing)
         _print_cycle_timing(cycle, cycle_timing)
 
         if state["plan"]["status"] != NEEDS_REPLAN:
             break
+    # stores selected ideas to memory DB for future runs to assess novelty; also ensures persistence even if the system is stopped after completion
     # await call_tool(registry, "memory", {"action": "store"}, state)
 
     total_time_ms = int((time.perf_counter() - agent_start) * 1000)
     console.print(f"\n[bold green]✓ Agent finished in {total_time_ms}ms[/bold green]")
 
-    state.pop("_llm", None)
+    state.pop("_llm_low", None)
+    state.pop("_llm_fixed", None)
+    state.pop("_llm_high", None)
     return state
 
 
@@ -84,8 +91,7 @@ async def _run_cycle(
     cycle: int,
     goal: str,
     state: dict[str, Any],
-    registry: ToolRegistry,
-    llm: LLMClient,
+    registry: ToolRegistry
 ) -> dict[str, Any]:
     """Execute one plan → execute → critique cycle. Returns timing record."""
     cycle_start = time.perf_counter()
@@ -96,7 +102,7 @@ async def _run_cycle(
     }
 
     # Phase 1: Plan
-    plan_ms, plan_ok = await _phase_plan(goal, state, registry, llm)
+    plan_ms, plan_ok = await _phase_plan(goal, state, registry)
     phase_results["plan"] = OK if plan_ok else FAILED
 
     # Phase 2: Execute
@@ -125,12 +131,11 @@ async def _run_cycle(
 async def _phase_plan(
     goal: str,
     state: dict[str, Any],
-    registry: ToolRegistry,
-    llm: LLMClient,
+    registry: ToolRegistry
 ) -> tuple[int, bool]:
     """Generate a plan. Returns (duration_ms, success)."""
     start = time.perf_counter()
-    plan = await generate_plan(goal, state, registry, llm)
+    plan = await generate_plan(goal, state, registry)
     ms = int((time.perf_counter() - start) * 1000)
 
     if not plan.get("steps"):
@@ -241,7 +246,7 @@ async def _phase_critique(
     start = time.perf_counter()
     critique_result = await run_critic_agent(state)
     ms = int((time.perf_counter() - start) * 1000)
-
+    print(f"--------> critique: \n{critique_result}\n <------")
     if critique_result:
         state.update(update_state(state, "critic", critique_result))
 
@@ -283,9 +288,9 @@ async def generate_plan(
     goal: str,
     state: dict[str, Any],
     registry: ToolRegistry,
-    llm: LLMClient,
 ) -> dict[str, Any]:
     """Ask the LLM to generate a multi-step plan."""
+    llm = state["_llm_low"]
     past_ideas = state.get("iteration_context", {}).get("past_ideas", [])
     # Cap to avoid bloating the prompt; see config for rationale
     capped = past_ideas[:config.MAX_PAST_IDEAS_FOR_PLANNING]

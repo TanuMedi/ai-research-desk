@@ -10,4 +10,3 @@ class Repo(BaseModel):
     topics: list[str] = Field(default_factory=list)
     readme: str = ""
     files: list[str] = Field(default_factory=list)
-    leverage_score: float = 0.0

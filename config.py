@@ -45,12 +45,23 @@ LLM_PROVIDER = os.getenv("LLM_PROVIDER", "openai")  # "claude" | "openai"
 CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", "claude-sonnet-4-6")
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o")
 LLM_MAX_TOKENS = 4096
+LLM_TEMP_FIXED = 0.0      # critic, evaluation, summarizer
+LLM_TEMP_LOW = 0.2        # planner
+LLM_TEMP_HIGH = 0.7       # proposal generation
 
 # Memory
 MEMORY_WEEKS_LIMIT = 4  # only load ideas from the last N weeks to keep context manageable
 
 # Novelty detection
 NOVELTY_THRESHOLD = 0.30  # Jaccard similarity cutoff; above this → "incremental"
+
+# Embeddings
+EMBEDDING_MODEL = "text-embedding-3-small"
+
+# Scoring weights (must sum to 1.0)
+WEIGHT_NOVELTY = float(os.getenv("WEIGHT_NOVELTY", "0.40"))
+WEIGHT_RELEVANCE = float(os.getenv("WEIGHT_RELEVANCE", "0.30"))
+WEIGHT_REPO_READINESS = float(os.getenv("WEIGHT_REPO_READINESS", "0.30"))
 
 # Reporting
 REPORT_TOP_IDEAS_COUNT = 8  # how many top ideas per source to feature in the newsletter

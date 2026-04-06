@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 import json
 import sqlite3
 from datetime import datetime, timezone
 from typing import Any
 
 import config
-from models.idea import Idea
 from utils.helpers import current_week_label
 
 # ---------------------------------------------------------------------------
@@ -17,7 +18,7 @@ TOOL_SCHEMA = {
         "action": {
             "type": "string",
             "enum": ["load", "store"],
-            "description": "'load' to fetch past ideas, 'store' to persist current ideas.",
+            "description": "'load' to fetch past ideas, 'store' to persist selected ideas.",
         },
     },
     "use_when": "You need to check idea novelty against past runs or save this week's ideas.",
@@ -29,10 +30,10 @@ async def run(tool_input: dict[str, Any], state: dict[str, Any]) -> dict[str, An
     """MCP-style entry point."""
     action = tool_input.get("action", "load")
     if action == "store":
-        ideas = state.get("ideas", [])
-        if ideas:
-            store_weekly_ideas(ideas)
-        return {"stored_count": len(ideas)}
+        selected_ideas = state.get("selected_ideas", [])
+        if selected_ideas:
+            store_weekly_ideas(selected_ideas)
+        return {"stored_count": len(selected_ideas)}
     else:
         weeks_limit = tool_input.get("weeks_limit", config.MEMORY_WEEKS_LIMIT)
         past = get_past_ideas(weeks_limit=weeks_limit)
@@ -113,7 +114,7 @@ def store_weekly_ideas(ideas: list[Idea]) -> None:
                         idea.source,
                         idea.key_idea,
                         json.dumps(idea.tags),
-                        idea.novelty_label,
+                        "",
                         now,
                     ),
                 )
@@ -132,45 +133,13 @@ def mark_demo_approved(source_titles: list[str]) -> None:
         conn.commit()
 
 
-def classify_novelty(new_idea: Idea, past_ideas: list[dict]) -> tuple[float, str]:
-    """
-    Compare new_idea against past ideas using Jaccard similarity on word sets.
-    Returns (max_similarity_score, "novel" | "incremental").
-    """
-    if not past_ideas:
-        return 0.0, "novel"
-
-    new_words = _word_set(new_idea.key_idea)
-    if not new_words:
-        return None
-
-    max_sim = 0.0
-    for past in past_ideas:
-        past_words = _word_set(past.get("key_idea", ""))
-        if not past_words:
-            continue
-        intersection = len(new_words & past_words)
-        union = len(new_words | past_words)
-        sim = intersection / union if union else 0.0
-        max_sim = max(max_sim, sim)
-
-    label = "incremental" if max_sim >= config.NOVELTY_THRESHOLD else "novel"
-    return max_sim, label
-
-
-def _word_set(text: str) -> set[str]:
-    """Lowercase word set, stripping punctuation."""
-    import re
-    words = re.findall(r"[a-z]+", text.lower())
-    # Remove common stopwords
-    stopwords = {
-        "a", "an", "the", "and", "or", "of", "in", "to", "is", "for", "with",
-        "on", "that", "this", "we", "our", "by",
-        # High-frequency domain terms that cause false similarity
-        "financial", "market", "model", "data", "system", "approach",
-        "method", "based", "using", "learning", "network",
-    }
-    return {w for w in words if w not in stopwords and len(w) > 2}
+def clear_ideas() -> int:
+    """Delete all rows from the ideas table. Returns remaining row count (should be 0)."""
+    with _connect() as conn:
+        conn.execute("DELETE FROM ideas")
+        conn.commit()
+        count = conn.execute("SELECT COUNT(*) FROM ideas").fetchone()[0]
+    return count
 
 
 def _week_label_n_weeks_ago(n: int) -> str:

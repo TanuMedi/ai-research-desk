@@ -16,8 +16,6 @@ class Idea(BaseModel):
 
     # Set by analysis / scoring
     novelty_score: float = 0.0
-    novelty_label: str = "unknown"  # "novel" | "incremental" | "unknown"
-    leverage_score: float = 0.0
     relevance_score: float = 0.0
-    feasibility_score: float = 0.0
+    repo_readiness_score: float = 0.0
     final_score: float = 0.0

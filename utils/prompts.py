@@ -1,4 +1,4 @@
-SUMMARIZE_PAPER_PROMPT = """You are an AI research analyst at a financial services firm. Analyze the following github repo or research paper and return a JSON object.
+IDEA_PROPOSAL_PROMPT = """You are an AI research analyst at a financial services firm. Analyze the following github repo or research paper and return a JSON object.
 
 Title: {title}
 Overview: {abstract}
@@ -21,13 +21,11 @@ Idea Title: {idea_title}
 Key Idea: {key_idea}
 Methods: {methods}
 Tags: {tags}
-Novelty: {novelty_label}
 
 Return ONLY valid JSON (no markdown, no explanation) with this exact structure:
 {{
   "idea_title": "Short descriptive title for the demo",
   "why_it_matters": "2-3 sentences on value and impact for a FinServ AI team — reference concrete benefits like cost savings, risk reduction, regulatory compliance, faster processing, or operational efficiency",
-  "novelty": "1-2 sentences on what makes this novel vs existing work",
   "demo_scope": "2-3 sentences describing a concrete MVP demo a FinServ AI engineering team could prototype in 2-4 weeks, using realistic financial data sources (market data APIs, sample transactions, regulatory filings, etc.)",
   "data_requirements": "1-2 sentences on what data, APIs, or datasets are needed, noting any compliance or data-privacy considerations relevant to financial services"
 }}
@@ -50,7 +48,7 @@ Available tools:
 {tool_schemas}
 
 Available skills (internal processing, not tools):
-- score_ideas: Score and rank ideas using multi-factor scoring (novelty, leverage, relevance, feasibility). Use after ideas are gathered. Produces: scored_ideas, selected_ideas.
+- score_ideas: Score and rank ideas using multi-factor scoring (novelty, relevance, repo_readiness). Use after ideas are gathered. Produces: scored_ideas, selected_ideas.
 - generate_proposals: Generate demo proposals for selected ideas via LLM. Use after scoring. Produces: proposals.
 
 Past ideas from memory (for novelty comparison):
@@ -90,7 +88,7 @@ PROPOSALS:
 {proposals_json}
 
 SCORES:
-{scores_json}
+{scores_json} 
 
 Evaluate each proposal on:
 1. Specificity — is the demo scope concrete and actionable?

@@ -11,7 +11,7 @@ from utils.prompts import CRITIC_PROMPT
 
 
 async def run_critic_agent(state: dict[str, Any]) -> dict[str, Any]:
-    llm: LLMClient = state.get("_llm")
+    llm: LLMClient = state.get("_llm_fixed")
     proposals = state.get("proposals", [])
     scored_ideas = state.get("scored_ideas", [])
 
@@ -57,7 +57,7 @@ async def evaluate_proposals(
                 "title": getattr(i, "source_title", ""),
                 "final_score": getattr(i, "final_score", 0),
                 "novelty": getattr(i, "novelty_score", 0),
-                "leverage": getattr(i, "leverage_score", 0),
+                "repo_readiness": getattr(i, "repo_readiness_score", 0),
             }
             for i in scored_ideas[:len(proposals)]
         ],

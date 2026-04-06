@@ -39,7 +39,7 @@ async def run(tool_input: dict[str, Any], state: dict[str, Any]) -> dict[str, An
     ]
 
     # Summarize via LLM (needs llm from state)
-    llm: LLMClient = state.get("_llm")
+    llm: LLMClient = state.get("_llm_fixed")
     ideas = []
     if llm and filtered:
         ideas = await summarize_papers_batch(filtered, llm)
