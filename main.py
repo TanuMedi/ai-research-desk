@@ -7,7 +7,7 @@ from rich.markdown import Markdown
 from rich.table import Table
 
 import config
-from agents.agent_loop import run_agent
+from agents.agent_loop import run_init_phase, run_agent_loop
 from evaluation.evaluator import evaluate_run
 from tools.memory_tool import init_db
 from tools.registry import build_default_registry
@@ -89,13 +89,24 @@ async def main() -> None:
     registry = build_default_registry()
     console.print(f"[green]✓ Registered {len(registry.list_tools())} tools[/green]")
 
-    # --- Run Agent Loop ---
-    console.print(Panel.fit(
-        "[bold cyan]Starting agent loop...[/bold cyan]",
-        border_style="cyan",
-    ))
+    # --- Run Pipeline ---
+    llms = {"fixed": llm_fixed, "low": llm_low, "high": llm_high}
 
-    state = await run_agent(DEFAULT_GOAL, llm_fixed, llm_low, llm_high, registry)
+    try:
+        console.print(Panel.fit(
+            "[bold cyan]Starting init phase...[/bold cyan]",
+            border_style="cyan",
+        ))
+        state = await run_init_phase(DEFAULT_GOAL, llms, registry)
+
+        console.print(Panel.fit(
+            "[bold magenta]Starting refinement loop...[/bold magenta]",
+            border_style="magenta",
+        ))
+        state = await run_agent_loop(state, registry)
+    except Exception as e:
+        console.print(f"[red]✗ Pipeline failed: {e}[/red]")
+        sys.exit(1)
 
     # --- Results ---
     ideas = state.get("ideas", [])
