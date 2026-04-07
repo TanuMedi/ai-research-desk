@@ -55,6 +55,39 @@ class PlannerDecision:
 # Phase 1: Initialization (runs once)
 # ---------------------------------------------------------------------------
 
+MAX_PAST_IDEAS = 5
+
+
+async def _retrieve_all_sources(
+    state: dict[str, Any],
+    registry: ToolRegistry,
+) -> None:
+    """Fetch from all sources (arxiv, github, memory) in parallel and merge into state."""
+    console.print("  [cyan]Fetching from all sources in parallel...[/cyan]")
+
+    retrieval_results = await asyncio.gather(
+        call_tool(registry, "arxiv_search", {}, state),
+        call_tool(registry, "github_search", {"query": "AI agent"}, state),
+        call_tool(registry, "memory", {"action": "load"}, state),
+        return_exceptions=True,
+    )
+
+    source_names = ["arxiv_search", "github_search", "memory"]
+    for name, result in zip(source_names, retrieval_results):
+        if isinstance(result, Exception):
+            console.print(f"    [red]✗ {name} failed: {result}[/red]")
+        elif "error" in result:
+            console.print(f"    [red]✗ {name} error: {result['error']}[/red]")
+        else:
+            if name == "memory":
+                past_ideas = result.get("past_ideas", [])[:MAX_PAST_IDEAS]
+                state["past_ideas"] = past_ideas
+                console.print(f"    [green]✓ {name}: loaded {len(past_ideas)} past ideas[/green]")
+            else:
+                update_state(state, name, result)
+                console.print(f"    [green]✓ {name} returned data[/green]")
+
+
 async def run_init_phase(
     goal: str,
     llms: dict[str, LLMClient],
@@ -72,23 +105,8 @@ async def run_init_phase(
     console.print("\n[bold cyan]━━━ Init Phase ━━━[/bold cyan]")
     init_start = time.perf_counter()
 
-    # --- Parallel retrieval from all sources ---
-    console.print("  [cyan]Fetching from all sources in parallel...[/cyan]")
-    retrieval_results = await asyncio.gather(
-        call_tool(registry, "arxiv_search", {}, state),
-        call_tool(registry, "github_search", {"query": "AI agent"}, state),
-        return_exceptions=True,
-    )
-
-    source_names = ["arxiv_search", "github_search"]
-    for name, result in zip(source_names, retrieval_results):
-        if isinstance(result, Exception):
-            console.print(f"    [red]✗ {name} failed: {result}[/red]")
-        elif "error" in result:
-            console.print(f"    [red]✗ {name} error: {result['error']}[/red]")
-        else:
-            state = update_state(state, name, result)
-            console.print(f"    [green]✓ {name} returned data[/green]")
+    # --- Multi-source retrieval (arxiv, github, memory) ---
+    await _retrieve_all_sources(state, registry)
 
     ideas_count = len(state.get("ideas", []))
     if ideas_count == 0:
