@@ -1,5 +1,5 @@
 from datetime import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class Paper(BaseModel):
@@ -8,3 +8,4 @@ class Paper(BaseModel):
     summary: str
     link: str
     published: datetime
+    tags: list[str] = Field(default_factory=list)

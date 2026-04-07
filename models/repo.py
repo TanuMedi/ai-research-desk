@@ -10,3 +10,5 @@ class Repo(BaseModel):
     topics: list[str] = Field(default_factory=list)
     readme: str = ""
     files: list[str] = Field(default_factory=list)
+    created_at: str = ""
+    updated_at: str = ""

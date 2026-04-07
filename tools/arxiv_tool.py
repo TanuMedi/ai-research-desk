@@ -1,3 +1,5 @@
+"""arXiv tool — fetch recent papers and return structured metadata."""
+
 import asyncio
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -6,26 +8,24 @@ import arxiv
 
 import config
 from models.paper import Paper
-from utils.llm_client import LLMClient
-from utils.summarizer import summarize_papers_batch
 
 # ---------------------------------------------------------------------------
 # MCP-style schema
 # ---------------------------------------------------------------------------
 TOOL_SCHEMA = {
     "name": "arxiv_search",
-    "description": "Fetch recent cs.AI papers from arXiv and summarize them via LLM to extract ideas.",
+    "description": "Fetch recent cs.AI papers from arXiv. Returns structured paper metadata.",
     "input_schema": {
         "query": {"type": "string", "description": "arXiv query (default: cat:cs.AI)"},
         "max_results": {"type": "integer", "description": "Max papers to fetch (default: 30)"},
     },
     "use_when": "You need academic research papers, novel techniques, or state-of-the-art methods.",
-    "produces": ["papers", "ideas"],
+    "produces": ["papers"],
 }
 
 
-async def run(tool_input: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
-    """MCP-style entry point: fetch papers, keyword-filter, summarize."""
+async def run(tool_input: dict[str, Any]) -> dict[str, Any]:
+    """MCP-style entry point. Returns structured paper metadata."""
     query = tool_input.get("query", config.ARXIV_QUERY)
     max_results = tool_input.get("max_results", config.MAX_PAPERS)
 
@@ -38,18 +38,11 @@ async def run(tool_input: dict[str, Any], state: dict[str, Any]) -> dict[str, An
         if any(kw in p.summary.lower() or kw in p.title.lower() for kw in keywords)
     ]
 
-    # Summarize via LLM (needs llm from state)
-    llm: LLMClient = state.get("_llm_fixed")
-    ideas = []
-    if llm and filtered:
-        ideas = await summarize_papers_batch(filtered, llm)
-        ideas = [i for i in ideas if i.agent_relevance]
-
-    return {"papers": [p.model_dump() for p in papers], "ideas": ideas}
+    return {"papers": [p.model_dump() for p in filtered]}
 
 
 # ---------------------------------------------------------------------------
-# Core functions (unchanged, reused by the wrapper above)
+# Core fetch
 # ---------------------------------------------------------------------------
 
 async def fetch_recent_papers(
@@ -81,13 +74,23 @@ def _fetch_sync(query: str, max_results: int) -> list[Paper]:
             published = published.replace(tzinfo=timezone.utc)
         if published < cutoff:
             break
+
+        # Infer tags from title keywords
+        title_lower = result.title.lower()
+        tags = [kw for kw in config.AGENT_KEYWORDS if kw in title_lower or kw in result.summary.lower()]
+
+        # Short summary: first sentence of abstract
+        abstract = result.summary.strip()
+        first_sentence_end = abstract.find(". ")
+
         papers.append(
             Paper(
                 title=result.title.strip(),
                 authors=[a.name for a in result.authors],
-                summary=result.summary.strip(),
+                summary=abstract,
                 link=result.entry_id,
                 published=published,
+                tags=tags
             )
         )
 

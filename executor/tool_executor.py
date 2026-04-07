@@ -26,7 +26,12 @@ async def call_tool(
         return error
 
     try:
-        result = await spec.handler(tool_input, state)
+        import inspect
+        sig = inspect.signature(spec.handler)
+        if len(sig.parameters) >= 2:
+            result = await spec.handler(tool_input, state)
+        else:
+            result = await spec.handler(tool_input)
     except Exception as exc:
         error = {"error": f"{tool_name} failed: {exc}"}
         _log(state, tool_name, tool_input, error)

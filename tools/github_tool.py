@@ -1,4 +1,4 @@
-"""GitHub tool — search repos and extract metadata."""
+"""GitHub tool — search repos and return structured metadata."""
 
 from __future__ import annotations
 
@@ -11,42 +11,32 @@ import httpx
 
 import config
 from models.repo import Repo
-from utils.llm_client import LLMClient
-from utils.summarizer import summarize_repos_batch
 
 # ---------------------------------------------------------------------------
 # MCP-style schema
 # ---------------------------------------------------------------------------
 TOOL_SCHEMA = {
     "name": "github_search",
-    "description": "Search GitHub for trending AI repositories created in the last 7 days. Extracts README, file list, and stars.",
+    "description": "Search GitHub for trending AI repositories created in the last 7 days. Returns structured repo metadata.",
     "input_schema": {
         "query": {"type": "string", "description": "GitHub search query (e.g. 'fintech llm agent')"},
         "max_results": {"type": "integer", "description": "Max repos to return (default: 10)"},
     },
     "use_when": "You need real-world implementations, reusable code, or leverage scores for ideas.",
-    "produces": ["repo_results", "ideas"],
+    "produces": ["repo_results"],
 }
 
 _GITHUB_API = "https://api.github.com"
 
 
-async def run(tool_input: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
-    """MCP-style entry point."""
+async def run(tool_input: dict[str, Any]) -> dict[str, Any]:
+    """MCP-style entry point. Returns structured repo metadata only — no idea generation."""
     query = tool_input.get("query", "")
     max_results = tool_input.get("max_results", 10)
     repos = await search_repos(query, max_results)
 
-    # Summarize repos into Ideas via LLM
-    llm: LLMClient = state.get("_llm_fixed")
-    ideas = []
-    if llm and repos:
-        ideas = await summarize_repos_batch(repos, llm)
-        ideas = [i for i in ideas if i.agent_relevance]
-
     return {
         "repo_results": [r.model_dump() for r in repos],
-        "ideas": ideas,
     }
 
 
@@ -104,11 +94,13 @@ async def search_repos(query: str, max_results: int = 10) -> list[Repo]:
                 full_name=full_name,
                 description=description,
                 stars=item.get("stargazers_count", 0),
-                language=item.get("language", "") or "",
+                language=item.get("language", ""),
                 url=item.get("html_url", ""),
                 topics=item.get("topics", []),
                 readme=readme,
                 files=files,
+                created_at=item.get("created_at", ""),
+                updated_at=item.get("updated_at", "")
             )
             results.append(repo)
 
